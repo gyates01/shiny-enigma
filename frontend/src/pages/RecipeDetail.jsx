@@ -82,7 +82,10 @@ export default function RecipeDetail() {
         <section style={{ marginBottom: 28 }}>
           <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Ingredients</h2>
           {recipe.ingredients.map((ing, i) => (
-            <div key={i} onClick={() => toggleCheck(i)} style={{
+            <div key={i} onClick={() => toggleCheck(i)}
+              role="checkbox" tabIndex={0} aria-checked={!!checked[i]}
+              onKeyDown={e => (e.key === ' ' || e.key === 'Enter') && toggleCheck(i)}
+              style={{
               display: 'flex', gap: 12, alignItems: 'flex-start',
               padding: '8px 0', borderBottom: '1px solid #1e1e1e', cursor: 'pointer',
               textDecoration: checked[i] ? 'line-through' : 'none',

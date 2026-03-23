@@ -29,21 +29,23 @@ export default function RecipeList() {
   const [error, setError] = useState('')
   const navigate = useNavigate()
 
-  const load = useCallback(async (q) => {
+  const load = useCallback(async (q, signal) => {
+    setLoading(true)
     try {
-      const data = await api.listRecipes(q || '')
+      const data = await api.listRecipes(q || '', signal)
       setRecipes(data)
       setError('')
     } catch (e) {
-      setError(e.message)
+      if (e.name !== 'AbortError') setError(e.message)
     } finally {
-      setLoading(false)
+      if (!signal?.aborted) setLoading(false)
     }
   }, [])
 
   useEffect(() => {
-    const timer = setTimeout(() => load(query), query ? 300 : 0)
-    return () => clearTimeout(timer)
+    const controller = new AbortController()
+    const timer = setTimeout(() => load(query, controller.signal), query ? 300 : 0)
+    return () => { clearTimeout(timer); controller.abort() }
   }, [query, load])
 
   return (

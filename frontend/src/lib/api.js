@@ -11,7 +11,7 @@ async function request(path, options = {}) {
 }
 
 export const api = {
-  listRecipes: (q) => request(`/recipes${q ? `?q=${encodeURIComponent(q)}` : ''}`),
+  listRecipes: (q, signal) => request(`/recipes${q ? `?q=${encodeURIComponent(q)}` : ''}`, signal ? { signal } : {}),
   addRecipe: (url) => request('/recipes', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
