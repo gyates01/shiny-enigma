@@ -60,7 +60,22 @@ export default function RecipeDetail() {
         marginBottom: 16, fontSize: 14,
       }}>← Back</button>
 
-      <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>{recipe.title}</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 700, flex: 1 }}>{recipe.title}</h1>
+        <button onClick={() => navigate(`/recipes/${id}/edit`)} style={{
+          background: 'none', border: '1px solid #444', color: '#aaa', cursor: 'pointer',
+          borderRadius: 6, padding: '6px 14px', fontSize: 13, marginLeft: 16, flexShrink: 0,
+        }}>Edit</button>
+      </div>
+
+      {recipe.image_url && (
+        <img
+          src={recipe.image_url}
+          alt={recipe.title}
+          style={{ width: '100%', maxHeight: 300, objectFit: 'cover', borderRadius: 12, marginBottom: 16 }}
+        />
+      )}
+
       <a href={recipe.source_url} target="_blank" rel="noreferrer"
          style={{ color: '#7c6af7', fontSize: 13, wordBreak: 'break-all' }}>
         {recipe.source_url}

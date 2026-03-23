@@ -10,15 +10,36 @@ async function request(path, options = {}) {
   return res.json()
 }
 
+function buildQuery(q, filters = {}) {
+  const params = new URLSearchParams()
+  if (q) params.set('q', q)
+  if (filters.cuisine) params.set('cuisine', filters.cuisine)
+  if (filters.category) params.set('category', filters.category)
+  if (filters.max_time) params.set('max_time', String(filters.max_time))
+  const s = params.toString()
+  return s ? `?${s}` : ''
+}
+
 export const api = {
-  listRecipes: (q, signal) => request(`/recipes${q ? `?q=${encodeURIComponent(q)}` : ''}`, signal ? { signal } : {}),
+  listRecipes: (q, filters, signal) =>
+    request(`/recipes${buildQuery(q, filters)}`, signal ? { signal } : {}),
   addRecipe: (url) => request('/recipes', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ url }),
   }),
   getRecipe: (id) => request(`/recipes/${id}`),
+  updateRecipe: (id, data) => request(`/recipes/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  }),
   deleteRecipe: (id) => request(`/recipes/${id}`, { method: 'DELETE' }),
+  uploadImage: (id, file) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    return request(`/recipes/${id}/image`, { method: 'POST', body: fd })
+  },
   getStats: () => request('/stats'),
   exportUrl: () => `${BASE}/export`,
 }

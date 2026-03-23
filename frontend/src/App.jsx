@@ -3,6 +3,7 @@ import Nav from './components/Nav'
 import RecipeList from './pages/RecipeList'
 import RecipeDetail from './pages/RecipeDetail'
 import AddRecipe from './pages/AddRecipe'
+import EditRecipe from './pages/EditRecipe'
 import Stats from './pages/Stats'
 
 export default function App() {
@@ -13,6 +14,7 @@ export default function App() {
         <Route path="/" element={<Navigate to="/recipes" replace />} />
         <Route path="/recipes" element={<RecipeList />} />
         <Route path="/recipes/:id" element={<RecipeDetail />} />
+        <Route path="/recipes/:id/edit" element={<EditRecipe />} />
         <Route path="/add" element={<AddRecipe />} />
         <Route path="/stats" element={<Stats />} />
       </Routes>
