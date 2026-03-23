@@ -1,5 +1,6 @@
 import pytest
 import api.routes.recipes as recipes_mod
+from recipe_extractor.database import filter_recipes, update_recipe, save_recipe, init_db, get_recipe
 
 
 def _raise_value_error(url):
@@ -125,8 +126,6 @@ def test_add_recipe_scraper_error(client, monkeypatch):
 
 
 # Tests for filter_recipes and update_recipe (Task 1)
-from recipe_extractor.database import filter_recipes, update_recipe, save_recipe, init_db
-
 
 def _seed(db, **overrides):
     """Helper: save a recipe to db and return its id."""
@@ -207,7 +206,6 @@ def test_update_recipe_title(tmp_db):
     rid = _seed(tmp_db)
     result = update_recipe(rid, {"title": "Updated"}, db_path=tmp_db)
     assert result is True
-    from recipe_extractor.database import get_recipe
     r = get_recipe(rid, db_path=tmp_db)
     assert r["title"] == "Updated"
 
@@ -215,7 +213,6 @@ def test_update_recipe_title(tmp_db):
 def test_update_recipe_list_fields_stored_as_json(tmp_db):
     rid = _seed(tmp_db)
     update_recipe(rid, {"ingredients": ["a", "b"], "tags": ["quick"]}, db_path=tmp_db)
-    from recipe_extractor.database import get_recipe
     r = get_recipe(rid, db_path=tmp_db)
     assert r["ingredients"] == ["a", "b"]
     assert r["tags"] == ["quick"]

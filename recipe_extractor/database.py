@@ -152,7 +152,7 @@ def filter_recipes(
     query: str = "",
     cuisine: str = "",
     category: str = "",
-    max_time: int = None,
+    max_time: Optional[int] = None,
     db_path: Path = DB_PATH,
 ) -> list[dict]:
     """Return recipes matching all provided filters. Empty/None values are ignored."""
@@ -217,7 +217,7 @@ def update_recipe(recipe_id: int, fields: dict, db_path: Path = DB_PATH) -> bool
         if k in safe and isinstance(safe[k], list):
             safe[k] = json.dumps(safe[k])
 
-    clauses = ", ".join(f"{k} = :{k}" for k in safe)
+    clauses = ", ".join(f'"{k}" = :{k}' for k in safe)
     safe["_id"] = recipe_id
 
     init_db(db_path)
