@@ -23,6 +23,26 @@ class AddRecipeRequest(BaseModel):
     url: str
 
 
+class UpdateRecipeRequest(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    servings: Optional[str] = None
+    prep_time: Optional[int] = None
+    cook_time: Optional[int] = None
+    total_time: Optional[int] = None
+    cuisine: Optional[str] = None
+    category: Optional[str] = None
+    tags: Optional[list] = None
+    ingredients: Optional[list] = None
+    instructions: Optional[list] = None
+    calories: Optional[float] = None
+    protein_g: Optional[float] = None
+    carbs_g: Optional[float] = None
+    fat_g: Optional[float] = None
+    fiber_g: Optional[float] = None
+    image_url: Optional[str] = None
+
+
 @router.get("/recipes")
 def api_list_recipes(q: Optional[str] = None, db: Path = Depends(get_db_path)):
     if q:
@@ -51,6 +71,21 @@ def api_get_recipe(recipe_id: int, db: Path = Depends(get_db_path)):
     if not recipe:
         raise HTTPException(status_code=404, detail="Recipe not found")
     return recipe
+
+
+@router.put("/recipes/{recipe_id}")
+def api_update_recipe(
+    recipe_id: int,
+    body: UpdateRecipeRequest,
+    db: Path = Depends(get_db_path),
+):
+    if not get_recipe(recipe_id, db_path=db):
+        raise HTTPException(status_code=404, detail="Recipe not found")
+    fields = body.model_dump(exclude_unset=True)
+    if not fields:
+        raise HTTPException(status_code=422, detail="No fields to update")
+    update_recipe(recipe_id, fields, db_path=db)
+    return get_recipe(recipe_id, db_path=db)
 
 
 @router.delete("/recipes/{recipe_id}", status_code=204)

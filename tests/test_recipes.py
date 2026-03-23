@@ -291,3 +291,56 @@ def test_upload_image_too_large(client, monkeypatch):
     )
     assert r.status_code == 422
     assert "too large" in r.json()["detail"].lower()
+
+
+# Tests for PUT /api/recipes/{id} (Task 3)
+
+_FAKE_FULL = {
+    "title": "Original Title", "source_url": "https://example.com/recipe",
+    "ingredients": ["flour"], "instructions": ["mix"],
+    "cuisine": "Italian", "category": "Dinner",
+    "servings": "4", "prep_time": 10, "cook_time": 20, "total_time": 30,
+    "calories": 300.0, "protein_g": 10.0, "carbs_g": None,
+    "fat_g": None, "fiber_g": None, "image_url": "", "description": "", "tags": [],
+}
+
+
+def _add_full_recipe(client, monkeypatch, url="https://example.com/recipe"):
+    monkeypatch.setattr(recipes_mod, "extract_recipe",
+                        lambda u: {**_FAKE_FULL, "source_url": u})
+    r = client.post("/api/recipes", json={"url": url})
+    return r.json()
+
+
+def test_update_recipe_api_changes_title(client, monkeypatch):
+    recipe = _add_full_recipe(client, monkeypatch)
+    rid = recipe["id"]
+    r = client.put(f"/api/recipes/{rid}", json={"title": "New Title"})
+    assert r.status_code == 200
+    assert r.json()["title"] == "New Title"
+    assert r.json()["cuisine"] == "Italian"
+
+
+def test_update_recipe_api_updates_list_fields(client, monkeypatch):
+    recipe = _add_full_recipe(client, monkeypatch)
+    rid = recipe["id"]
+    r = client.put(f"/api/recipes/{rid}", json={
+        "ingredients": ["butter", "sugar"],
+        "tags": ["sweet", "easy"],
+    })
+    assert r.status_code == 200
+    data = r.json()
+    assert data["ingredients"] == ["butter", "sugar"]
+    assert data["tags"] == ["sweet", "easy"]
+
+
+def test_update_recipe_api_not_found(client):
+    r = client.put("/api/recipes/9999", json={"title": "X"})
+    assert r.status_code == 404
+
+
+def test_update_recipe_api_empty_body(client, monkeypatch):
+    recipe = _add_full_recipe(client, monkeypatch)
+    rid = recipe["id"]
+    r = client.put(f"/api/recipes/{rid}", json={})
+    assert r.status_code == 422
