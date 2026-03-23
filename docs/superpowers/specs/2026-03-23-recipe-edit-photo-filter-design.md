@@ -31,7 +31,8 @@ data/images/                ← uploaded image files (created at runtime)
 ### Modified Files
 
 ```
-api/main.py                 ← mount /images/ static dir
+api/main.py                 ← mount /images/ static dir BEFORE the SPA catch-all route
+recipe_extractor/database.py ← also modify list_recipes(), search_recipes() for image_url + filters
 frontend/src/pages/RecipeList.jsx   ← add filter bar, thumbnails
 frontend/src/pages/RecipeDetail.jsx ← add photo display, Edit button
 frontend/src/components/Nav.jsx     ← no change needed
@@ -49,14 +50,31 @@ Uploaded images are saved to `data/images/` (sibling of `data/recipes.db`). Fast
 
 File naming: `{recipe_id}{ext}` where ext is derived from the uploaded file's content type (`.jpg`, `.png`, `.webp`). Existing file is overwritten on re-upload.
 
-### New `database.py` Function
+### `database.py` Changes
+
+**New function:**
 
 ```python
 def update_recipe(recipe_id: int, fields: dict, db_path: Path = DB_PATH) -> bool:
     """Update editable fields of a recipe. Returns True if a row was updated."""
 ```
 
-Accepts a dict of only the fields to update. Uses a dynamic `SET` clause. Does not update `source_url` or `date_added`.
+Accepts a dict of only the fields to update. Uses a dynamic `SET` clause. Does not update `source_url` or `date_added`. List-type fields (`ingredients`, `instructions`, `tags`) must be `json.dumps()`-ed before the UPDATE, matching the pattern in `save_recipe()`.
+
+**Modified functions:**
+
+- `list_recipes()` — add `image_url` to the SELECT clause so recipe cards can display thumbnails
+- `search_recipes()` — same; add `image_url` to its SELECT clause
+
+**New function for filtered queries:**
+
+```python
+def filter_recipes(query: str = "", cuisine: str = "", category: str = "",
+                   max_time: int = None, db_path: Path = DB_PATH) -> list[dict]:
+    """Return recipes matching all provided filters. Empty/None values are ignored."""
+```
+
+Builds a dynamic WHERE clause combining the full-text `LIKE` search (same logic as `search_recipes`) with optional `cuisine =`, `category =`, and `total_time <=` clauses. The route handler calls this single function for all `GET /api/recipes` requests.
 
 ### API Endpoints
 
@@ -82,11 +100,11 @@ New optional query params (combine with existing `?q=`):
 
 | Param | Type | Behaviour |
 |-------|------|-----------|
-| `cuisine` | string | exact match (case-insensitive) |
-| `category` | string | exact match (case-insensitive) |
-| `max_time` | integer | `total_time <= max_time` (NULL rows excluded) |
+| `cuisine` | string | `cuisine = :cuisine` (case-insensitive) |
+| `category` | string | `category = :category` (case-insensitive) |
+| `max_time` | integer | `total_time <= :max_time` (rows where `total_time` IS NULL are excluded) |
 
-All params are AND-combined. Empty string params are ignored.
+All params are AND-combined. Empty/absent params are ignored. The route delegates to `filter_recipes()` in `database.py` for all cases (replaces separate `list_recipes`/`search_recipes` dispatch).
 
 ---
 
@@ -151,3 +169,4 @@ Where `buildQuery` builds the query string from `q`, `cuisine`, `category`, `max
 - Multiple photos per recipe
 - Undo / revision history
 - Bulk editing
+- Cleaning up orphaned image files when a recipe is deleted (images in `data/images/` persist after deletion)
