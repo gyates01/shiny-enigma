@@ -13,7 +13,7 @@ import requests
 from bs4 import BeautifulSoup
 
 try:
-    from recipe_scrapers import scrape_me, WebsiteNotImplementedError
+    from recipe_scrapers import scrape_html, WebsiteNotImplementedError
     _SCRAPERS_AVAILABLE = True
 except ImportError:
     _SCRAPERS_AVAILABLE = False
@@ -74,7 +74,12 @@ def _safe_call(fn, *args, default=None):
 
 def _scrape_with_library(url: str) -> dict:
     """Use recipe-scrapers to extract data."""
-    scraper = scrape_me(url)
+    resp = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
+    resp.raise_for_status()
+    # Decode with detected encoding to avoid UTF-8 errors on non-UTF-8 pages
+    encoding = resp.encoding or resp.apparent_encoding or "utf-8"
+    html = resp.content.decode(encoding, errors="replace")
+    scraper = scrape_html(html, org_url=url)
 
     nutrients = _safe_call(scraper.nutrients, default={}) or {}
 
@@ -122,7 +127,9 @@ def _scrape_jsonld_fallback(url: str) -> dict:
     """Parse schema.org/Recipe JSON-LD from the page source directly."""
     resp = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
     resp.raise_for_status()
-    soup = BeautifulSoup(resp.text, "html.parser")
+    encoding = resp.encoding or resp.apparent_encoding or "utf-8"
+    html = resp.content.decode(encoding, errors="replace")
+    soup = BeautifulSoup(html, "html.parser")
 
     data = {}
     for tag in soup.find_all("script", type="application/ld+json"):
