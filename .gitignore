@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# Data & exports (don't commit the DB or generated files)
+data/*.db
+exports/*.xlsx
+exports/*.csv
+
+# Env
+.env
+
+# OS
+.DS_Store
+Thumbs.db
