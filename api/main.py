@@ -19,6 +19,11 @@ app.include_router(recipes.router, prefix="/api")
 app.include_router(stats.router,   prefix="/api")
 app.include_router(export.router,  prefix="/api")
 
+# Serve uploaded images (must be mounted before SPA catch-all)
+_images_dir = Path(__file__).parent.parent / "data" / "images"
+_images_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/images", StaticFiles(directory=_images_dir), name="images")
+
 # Serve built React app in production
 _dist = Path(__file__).parent.parent / "frontend" / "dist"
 if _dist.exists():

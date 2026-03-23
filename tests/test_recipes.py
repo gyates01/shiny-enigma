@@ -222,3 +222,72 @@ def test_update_recipe_nonexistent_returns_false(tmp_db):
     init_db(tmp_db)
     result = update_recipe(9999, {"title": "x"}, db_path=tmp_db)
     assert result is False
+
+
+# Tests for image upload (Task 2)
+
+_TINY_JPEG = (
+    b"\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x00\x00\x01\x00\x01\x00\x00"
+    b"\xff\xdb\x00C\x00\x08\x06\x06\x07\x06\x05\x08\x07\x07\x07\t\t"
+    b"\x08\n\x0c\x14\r\x0c\x0b\x0b\x0c\x19\x12\x13\x0f\x14\x1d\x1a"
+    b"\x1f\x1e\x1d\x1a\x1c\x1c $.' \",#\x1c\x1c(7),01444\x1f'9=82<.342\x1e"
+    b"\xff\xd9"
+)
+
+_FAKE_MINIMAL = {
+    "title": "Photo Recipe", "source_url": "https://example.com/photo",
+    "ingredients": [], "instructions": [], "cuisine": "", "category": "",
+    "servings": "", "prep_time": None, "cook_time": None, "total_time": None,
+    "calories": None, "protein_g": None, "carbs_g": None, "fat_g": None,
+    "fiber_g": None, "image_url": "", "description": "", "tags": [],
+}
+
+
+def _add_recipe(client, monkeypatch, url="https://example.com/photo", fake=None):
+    if fake is None:
+        fake = _FAKE_MINIMAL
+    monkeypatch.setattr(recipes_mod, "extract_recipe", lambda u: {**fake, "source_url": u})
+    r = client.post("/api/recipes", json={"url": url})
+    return r.json()["id"]
+
+
+def test_upload_image_success(client, monkeypatch):
+    rid = _add_recipe(client, monkeypatch)
+    r = client.post(
+        f"/api/recipes/{rid}/image",
+        files={"file": ("test.jpg", _TINY_JPEG, "image/jpeg")},
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["image_url"].startswith("/images/")
+    assert data["image_url"].endswith(".jpg")
+
+
+def test_upload_image_unsupported_type(client, monkeypatch):
+    rid = _add_recipe(client, monkeypatch, url="https://example.com/t2",
+                      fake={**_FAKE_MINIMAL, "source_url": "https://example.com/t2"})
+    r = client.post(
+        f"/api/recipes/{rid}/image",
+        files={"file": ("doc.pdf", b"%PDF", "application/pdf")},
+    )
+    assert r.status_code == 422
+
+
+def test_upload_image_recipe_not_found(client):
+    r = client.post(
+        "/api/recipes/9999/image",
+        files={"file": ("x.jpg", _TINY_JPEG, "image/jpeg")},
+    )
+    assert r.status_code == 404
+
+
+def test_upload_image_too_large(client, monkeypatch):
+    rid = _add_recipe(client, monkeypatch, url="https://example.com/big",
+                      fake={**_FAKE_MINIMAL, "source_url": "https://example.com/big"})
+    big_data = b"\xff\xd8" + b"\x00" * (11 * 1024 * 1024)
+    r = client.post(
+        f"/api/recipes/{rid}/image",
+        files={"file": ("big.jpg", big_data, "image/jpeg")},
+    )
+    assert r.status_code == 422
+    assert "too large" in r.json()["detail"].lower()
