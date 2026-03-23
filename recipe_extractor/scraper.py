@@ -74,7 +74,7 @@ def _safe_call(fn, *args, default=None):
 
 def _scrape_with_library(url: str) -> dict:
     """Use recipe-scrapers to extract data."""
-    scraper = scrape_me(url, wild_mode=True)
+    scraper = scrape_me(url)
 
     nutrients = _safe_call(scraper.nutrients, default={}) or {}
 
@@ -105,6 +105,17 @@ def _scrape_with_library(url: str) -> dict:
         "fat_g": _nut("fatContent"),
         "fiber_g": _nut("fiberContent"),
     }
+
+
+def _extract_image(img) -> str:
+    """Extract a URL string from schema.org image field (str, dict, or list)."""
+    if isinstance(img, str):
+        return img
+    if isinstance(img, list) and img:
+        img = img[0]
+    if isinstance(img, dict):
+        return img.get("url", "")
+    return ""
 
 
 def _scrape_jsonld_fallback(url: str) -> dict:
@@ -167,10 +178,7 @@ def _scrape_jsonld_fallback(url: str) -> dict:
         "total_time": _minutes(data.get("totalTime")),
         "ingredients": _coerce_list(data.get("recipeIngredient", [])),
         "instructions": instructions,
-        "image_url": (
-            data["image"] if isinstance(data.get("image"), str)
-            else (data.get("image") or {}).get("url", "")
-        ),
+        "image_url": _extract_image(data.get("image")),
         "cuisine": (
             ", ".join(data["recipeCuisine"])
             if isinstance(data.get("recipeCuisine"), list)
