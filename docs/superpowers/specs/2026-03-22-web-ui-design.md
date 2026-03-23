@@ -81,13 +81,16 @@ The FastAPI backend imports `recipe_extractor` modules directly. In production, 
 
 ```
 GET    /api/recipes              list all (id, title, cuisine, category, total_time, calories, servings, date_added)
+                                 optional ?q= param searches across title, cuisine, category, tags, ingredients
 POST   /api/recipes              body: { url: string } → scrape and save; returns saved recipe
 GET    /api/recipes/{id}         full recipe with ingredients and instructions
 DELETE /api/recipes/{id}         delete; returns 204
-GET    /api/recipes/search?q=    search across title, cuisine, category, tags, ingredients
 GET    /api/stats                aggregate stats
-GET    /api/export               triggers Excel export, returns file download
+GET    /api/export               triggers Excel export, returns file as attachment
+                                 (Content-Disposition: attachment; filename="recipes_<timestamp>.xlsx")
 ```
+
+Note: search is a query param on `GET /api/recipes` (not a separate `/search` sub-route) to avoid a FastAPI route conflict between `/recipes/search` and `/recipes/{id}`.
 
 ## Error Handling
 
@@ -103,10 +106,11 @@ GET    /api/export               triggers Excel export, returns file download
 cd api && uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
 # Terminal 2 — Frontend
-cd frontend && npm run dev
+cd frontend && npm run dev -- --host
 ```
 
 Open http://localhost:5173 on desktop, http://[local-ip]:5173 on mobile.
+The `--host` flag is required for Vite to bind to the network interface so mobile devices can reach the dev server.
 
 ## Running (Production / Local Network)
 
