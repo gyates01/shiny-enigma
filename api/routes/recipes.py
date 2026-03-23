@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Optional
+from urllib.parse import urlparse
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
@@ -28,7 +29,8 @@ def api_list_recipes(q: Optional[str] = None, db: Path = Depends(get_db_path)):
 @router.post("/recipes", status_code=201)
 def api_add_recipe(body: AddRecipeRequest, db: Path = Depends(get_db_path)):
     url = body.url.strip()
-    if not url.startswith(("http://", "https://")):
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
         raise HTTPException(status_code=422, detail=f"Invalid URL: {url}")
     try:
         recipe = extract_recipe(url)

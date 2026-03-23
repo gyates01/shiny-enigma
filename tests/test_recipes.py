@@ -1,4 +1,9 @@
 import pytest
+import api.routes.recipes as recipes_mod
+
+
+def _raise_value_error(url):
+    raise ValueError("No recipe found")
 
 
 def test_list_recipes_empty(client):
@@ -29,8 +34,7 @@ def test_add_and_list_recipe(client, monkeypatch):
         "description": "",
         "tags": [],
     }
-    import api.routes.recipes as mod
-    monkeypatch.setattr(mod, "extract_recipe", lambda url: {**fake, "source_url": url})
+    monkeypatch.setattr(recipes_mod, "extract_recipe", lambda url: {**fake, "source_url": url})
 
     r = client.post("/api/recipes", json={"url": "https://example.com/recipe"})
     assert r.status_code == 201
@@ -52,8 +56,7 @@ def test_get_recipe_detail(client, monkeypatch):
         "calories": 300.0, "protein_g": None, "carbs_g": None,
         "fat_g": None, "fiber_g": None, "image_url": "", "description": "", "tags": [],
     }
-    import api.routes.recipes as mod
-    monkeypatch.setattr(mod, "extract_recipe", lambda url: {**fake, "source_url": url})
+    monkeypatch.setattr(recipes_mod, "extract_recipe", lambda url: {**fake, "source_url": url})
 
     add = client.post("/api/recipes", json={"url": "https://example.com/recipe"})
     recipe_id = add.json()["id"]
@@ -76,8 +79,7 @@ def test_delete_recipe(client, monkeypatch):
         "calories": None, "protein_g": None, "carbs_g": None, "fat_g": None,
         "fiber_g": None, "image_url": "", "description": "", "tags": [],
     }
-    import api.routes.recipes as mod
-    monkeypatch.setattr(mod, "extract_recipe", lambda url: {**fake, "source_url": url})
+    monkeypatch.setattr(recipes_mod, "extract_recipe", lambda url: {**fake, "source_url": url})
 
     add = client.post("/api/recipes", json={"url": "https://example.com/recipe"})
     recipe_id = add.json()["id"]
@@ -97,8 +99,7 @@ def test_search_recipes(client, monkeypatch):
         "total_time": None, "calories": None, "protein_g": None, "carbs_g": None,
         "fat_g": None, "fiber_g": None, "image_url": "", "description": "", "tags": [],
     }
-    import api.routes.recipes as mod
-    monkeypatch.setattr(mod, "extract_recipe", lambda url: {**fake, "source_url": url})
+    monkeypatch.setattr(recipes_mod, "extract_recipe", lambda url: {**fake, "source_url": url})
     client.post("/api/recipes", json={"url": "https://example.com/tikka"})
 
     r = client.get("/api/recipes?q=chicken")
@@ -112,11 +113,11 @@ def test_search_recipes(client, monkeypatch):
 def test_add_recipe_invalid_url(client):
     r = client.post("/api/recipes", json={"url": "not-a-url"})
     assert r.status_code == 422
+    assert "Invalid URL" in r.json()["detail"]
 
 
 def test_add_recipe_scraper_error(client, monkeypatch):
-    import api.routes.recipes as mod
-    monkeypatch.setattr(mod, "extract_recipe", lambda url: (_ for _ in ()).throw(ValueError("No recipe found")))
+    monkeypatch.setattr(recipes_mod, "extract_recipe", _raise_value_error)
 
     r = client.post("/api/recipes", json={"url": "https://example.com/nope"})
     assert r.status_code == 422
