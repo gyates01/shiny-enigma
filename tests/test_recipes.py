@@ -344,3 +344,67 @@ def test_update_recipe_api_empty_body(client, monkeypatch):
     rid = recipe["id"]
     r = client.put(f"/api/recipes/{rid}", json={})
     assert r.status_code == 422
+
+
+# Tests for GET /api/recipes filter params (Task 4)
+
+def test_api_filter_by_cuisine(client, monkeypatch):
+    for title, url, cuisine in [
+        ("Italian dish", "https://example.com/i1", "Italian"),
+        ("French dish", "https://example.com/f1", "French"),
+    ]:
+        fake = {
+            "title": title, "source_url": url, "ingredients": [], "instructions": [],
+            "cuisine": cuisine, "category": "Dinner", "servings": "", "prep_time": None,
+            "cook_time": None, "total_time": None, "calories": None, "protein_g": None,
+            "carbs_g": None, "fat_g": None, "fiber_g": None, "image_url": "",
+            "description": "", "tags": [],
+        }
+        monkeypatch.setattr(recipes_mod, "extract_recipe", lambda u, f=fake: {**f, "source_url": u})
+        client.post("/api/recipes", json={"url": url})
+
+    r = client.get("/api/recipes?cuisine=Italian")
+    assert r.status_code == 200
+    results = r.json()
+    assert len(results) == 1
+    assert results[0]["cuisine"] == "Italian"
+
+
+def test_api_filter_by_max_time(client, monkeypatch):
+    for title, url, total_time in [
+        ("Quick", "https://example.com/q1", 15),
+        ("Slow", "https://example.com/s1", 90),
+    ]:
+        fake = {
+            "title": title, "source_url": url, "ingredients": [], "instructions": [],
+            "cuisine": "", "category": "", "servings": "", "prep_time": None,
+            "cook_time": None, "total_time": total_time, "calories": None, "protein_g": None,
+            "carbs_g": None, "fat_g": None, "fiber_g": None, "image_url": "",
+            "description": "", "tags": [],
+        }
+        monkeypatch.setattr(recipes_mod, "extract_recipe", lambda u, f=fake: {**f, "source_url": u})
+        client.post("/api/recipes", json={"url": url})
+
+    r = client.get("/api/recipes?max_time=30")
+    assert r.status_code == 200
+    results = r.json()
+    assert len(results) == 1
+    assert results[0]["title"] == "Quick"
+
+
+def test_api_list_includes_image_url(client, monkeypatch):
+    fake = {
+        "title": "With Photo", "source_url": "https://example.com/wp",
+        "ingredients": [], "instructions": [], "cuisine": "", "category": "",
+        "servings": "", "prep_time": None, "cook_time": None, "total_time": None,
+        "calories": None, "protein_g": None, "carbs_g": None, "fat_g": None,
+        "fiber_g": None, "image_url": "https://img.example.com/photo.jpg",
+        "description": "", "tags": [],
+    }
+    monkeypatch.setattr(recipes_mod, "extract_recipe", lambda u: {**fake, "source_url": u})
+    client.post("/api/recipes", json={"url": "https://example.com/wp"})
+
+    r = client.get("/api/recipes")
+    assert r.status_code == 200
+    assert "image_url" in r.json()[0]
+    assert r.json()[0]["image_url"] == "https://img.example.com/photo.jpg"

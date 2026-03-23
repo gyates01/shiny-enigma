@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from api.deps import get_db_path
 from recipe_extractor.scraper import extract_recipe
 from recipe_extractor.database import (
-    list_recipes, search_recipes, get_recipe, save_recipe, delete_recipe, update_recipe
+    filter_recipes, get_recipe, save_recipe, delete_recipe, update_recipe
 )
 
 _ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
@@ -44,10 +44,20 @@ class UpdateRecipeRequest(BaseModel):
 
 
 @router.get("/recipes")
-def api_list_recipes(q: Optional[str] = None, db: Path = Depends(get_db_path)):
-    if q:
-        return search_recipes(q, db_path=db)
-    return list_recipes(db_path=db)
+def api_list_recipes(
+    q: Optional[str] = None,
+    cuisine: Optional[str] = None,
+    category: Optional[str] = None,
+    max_time: Optional[int] = None,
+    db: Path = Depends(get_db_path),
+):
+    return filter_recipes(
+        query=q or "",
+        cuisine=cuisine or "",
+        category=category or "",
+        max_time=max_time,
+        db_path=db,
+    )
 
 
 @router.post("/recipes", status_code=201)
