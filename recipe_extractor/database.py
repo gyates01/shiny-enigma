@@ -121,7 +121,7 @@ def list_recipes(db_path: Path = DB_PATH) -> list[dict]:
     with _connect(db_path) as conn:
         rows = conn.execute("""
             SELECT id, title, cuisine, category, total_time, calories, servings,
-                   date_added, source_url
+                   date_added, source_url, image_url
             FROM recipes
             ORDER BY date_added DESC
         """).fetchall()
@@ -135,7 +135,7 @@ def search_recipes(query: str, db_path: Path = DB_PATH) -> list[dict]:
     with _connect(db_path) as conn:
         rows = conn.execute("""
             SELECT id, title, cuisine, category, total_time, calories, servings,
-                   date_added, source_url
+                   date_added, source_url, image_url
             FROM recipes
             WHERE title       LIKE :q COLLATE NOCASE
                OR cuisine     LIKE :q COLLATE NOCASE
@@ -146,6 +146,86 @@ def search_recipes(query: str, db_path: Path = DB_PATH) -> list[dict]:
             ORDER BY date_added DESC
         """, {"q": like}).fetchall()
     return [dict(r) for r in rows]
+
+
+def filter_recipes(
+    query: str = "",
+    cuisine: str = "",
+    category: str = "",
+    max_time: int = None,
+    db_path: Path = DB_PATH,
+) -> list[dict]:
+    """Return recipes matching all provided filters. Empty/None values are ignored."""
+    init_db(db_path)
+    conditions = []
+    params: dict = {}
+
+    if query:
+        conditions.append("""(
+            title       LIKE :q COLLATE NOCASE
+            OR cuisine  LIKE :q COLLATE NOCASE
+            OR category LIKE :q COLLATE NOCASE
+            OR tags     LIKE :q COLLATE NOCASE
+            OR ingredients LIKE :q COLLATE NOCASE
+            OR description LIKE :q COLLATE NOCASE
+        )""")
+        params["q"] = f"%{query}%"
+
+    if cuisine:
+        conditions.append("cuisine = :cuisine COLLATE NOCASE")
+        params["cuisine"] = cuisine
+
+    if category:
+        conditions.append("category = :category COLLATE NOCASE")
+        params["category"] = category
+
+    if max_time is not None:
+        conditions.append("total_time IS NOT NULL AND total_time <= :max_time")
+        params["max_time"] = max_time
+
+    where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
+
+    with _connect(db_path) as conn:
+        rows = conn.execute(f"""
+            SELECT id, title, cuisine, category, total_time, calories, servings,
+                   date_added, source_url, image_url
+            FROM recipes
+            {where}
+            ORDER BY date_added DESC
+        """, params).fetchall()
+    return [dict(r) for r in rows]
+
+
+def update_recipe(recipe_id: int, fields: dict, db_path: Path = DB_PATH) -> bool:
+    """Update editable fields of a recipe. Returns True if a row was updated.
+
+    List-type fields (ingredients, instructions, tags) are JSON-encoded automatically.
+    source_url and date_added are not updatable.
+    """
+    ALLOWED = {
+        "title", "description", "servings", "prep_time", "cook_time", "total_time",
+        "cuisine", "category", "tags", "ingredients", "instructions",
+        "calories", "protein_g", "carbs_g", "fat_g", "fiber_g", "image_url",
+    }
+    LIST_FIELDS = {"tags", "ingredients", "instructions"}
+
+    safe = {k: v for k, v in fields.items() if k in ALLOWED}
+    if not safe:
+        return False
+
+    for k in LIST_FIELDS:
+        if k in safe and isinstance(safe[k], list):
+            safe[k] = json.dumps(safe[k])
+
+    clauses = ", ".join(f"{k} = :{k}" for k in safe)
+    safe["_id"] = recipe_id
+
+    init_db(db_path)
+    with _connect(db_path) as conn:
+        cur = conn.execute(
+            f"UPDATE recipes SET {clauses} WHERE id = :_id", safe
+        )
+    return cur.rowcount > 0
 
 
 def get_recipe(recipe_id: int, db_path: Path = DB_PATH) -> Optional[dict]:
