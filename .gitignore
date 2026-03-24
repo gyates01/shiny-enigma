@@ -23,8 +23,6 @@ Thumbs.db
 
 # Frontend
 frontend/node_modules/
-# frontend/dist/ is committed on the production branch (pre-built for Railway)
-frontend/dist/
 
 # Visual companion
 .superpowers/
