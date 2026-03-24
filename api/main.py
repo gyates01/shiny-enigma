@@ -28,6 +28,18 @@ app.mount("/images", StaticFiles(directory=_images_dir), name="images")
 
 # Serve built React app in production
 _dist = Path(__file__).parent.parent / "frontend" / "dist"
+
+@app.get("/_debug", include_in_schema=False)
+def debug():
+    import os
+    return {
+        "dist_path": str(_dist),
+        "dist_exists": _dist.exists(),
+        "file": __file__,
+        "cwd": os.getcwd(),
+        "dist_contents": list(str(p) for p in _dist.iterdir()) if _dist.exists() else [],
+    }
+
 if _dist.exists():
     app.mount("/assets", StaticFiles(directory=_dist / "assets"), name="assets")
 
