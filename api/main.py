@@ -29,7 +29,7 @@ app.mount("/images", StaticFiles(directory=_images_dir), name="images")
 # Serve built React app in production
 _dist = Path(__file__).parent.parent / "frontend" / "dist"
 
-@app.get("/_debug", include_in_schema=False)
+@app.get("/api/_debug", include_in_schema=False)
 def debug():
     import os
     return {
