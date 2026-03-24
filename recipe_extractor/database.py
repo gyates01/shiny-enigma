@@ -1,12 +1,14 @@
 """SQLite persistence layer for the recipe extractor."""
 
 import json
+import os
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-DB_PATH = Path(__file__).parent.parent / "data" / "recipes.db"
+_data_dir = Path(os.environ.get("DATA_DIR", str(Path(__file__).parent.parent / "data")))
+DB_PATH = _data_dir / "recipes.db"
 
 
 def _connect(db_path: Path = DB_PATH) -> sqlite3.Connection:
@@ -242,6 +244,16 @@ def get_recipe(recipe_id: int, db_path: Path = DB_PATH) -> Optional[dict]:
     r["instructions"] = json.loads(r["instructions"] or "[]")
     r["tags"] = json.loads(r["tags"] or "[]")
     return r
+
+
+def get_recipe_by_url(url: str, db_path: Path = DB_PATH) -> Optional[dict]:
+    """Return id and title for a recipe matching source_url, or None."""
+    init_db(db_path)
+    with _connect(db_path) as conn:
+        row = conn.execute(
+            "SELECT id, title FROM recipes WHERE source_url = ?", (url,)
+        ).fetchone()
+    return dict(row) if row else None
 
 
 def get_stats(db_path: Path = DB_PATH) -> dict:

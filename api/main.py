@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,7 +21,8 @@ app.include_router(stats.router,   prefix="/api")
 app.include_router(export.router,  prefix="/api")
 
 # Serve uploaded images (must be mounted before SPA catch-all)
-_images_dir = Path(__file__).parent.parent / "data" / "images"
+_data_dir = Path(os.environ.get("DATA_DIR", str(Path(__file__).parent.parent / "data")))
+_images_dir = _data_dir / "images"
 _images_dir.mkdir(parents=True, exist_ok=True)
 app.mount("/images", StaticFiles(directory=_images_dir), name="images")
 
