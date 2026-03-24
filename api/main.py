@@ -8,6 +8,9 @@ from api.routes import recipes, stats, export
 
 app = FastAPI(title="Recipe Extractor API")
 
+import logging
+_logger = logging.getLogger("uvicorn.error")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -27,5 +30,9 @@ app.mount("/images", StaticFiles(directory=_images_dir), name="images")
 
 # Serve built React app — html=True serves index.html for / and unknown paths (SPA mode)
 _dist = Path(__file__).parent.parent / "frontend" / "dist"
+_logger.info(f"STARTUP: dist path={_dist}, exists={_dist.exists()}")
 if _dist.exists():
+    _logger.info(f"STARTUP: dist contents={list(_dist.iterdir())}")
     app.mount("/", StaticFiles(directory=_dist, html=True), name="spa")
+else:
+    _logger.warning("STARTUP: frontend/dist not found — SPA will not be served")
