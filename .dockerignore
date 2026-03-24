@@ -1,0 +1,14 @@
+.git
+.venv
+venv
+__pycache__
+*.pyc
+*.pyo
+.pytest_cache
+.claude
+.superpowers
+data/*.db
+exports/*.xlsx
+exports/*.csv
+.env
+frontend/node_modules
