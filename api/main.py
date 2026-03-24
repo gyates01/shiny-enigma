@@ -30,9 +30,9 @@ app.mount("/images", StaticFiles(directory=_images_dir), name="images")
 
 # Serve built React app — html=True serves index.html for / and unknown paths (SPA mode)
 _dist = Path(__file__).parent.parent / "frontend" / "dist"
-_logger.info(f"STARTUP: dist path={_dist}, exists={_dist.exists()}")
+print(f"STARTUP: dist path={_dist}, exists={_dist.exists()}", flush=True)
 if _dist.exists():
-    _logger.info(f"STARTUP: dist contents={list(_dist.iterdir())}")
+    print(f"STARTUP: dist contents={list(_dist.iterdir())}", flush=True)
     app.mount("/", StaticFiles(directory=_dist, html=True), name="spa")
 else:
-    _logger.warning("STARTUP: frontend/dist not found — SPA will not be served")
+    print("STARTUP: frontend/dist not found — SPA will not be served", flush=True)
