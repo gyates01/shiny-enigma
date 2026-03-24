@@ -31,6 +31,10 @@ _dist = Path(__file__).parent.parent / "frontend" / "dist"
 if _dist.exists():
     app.mount("/assets", StaticFiles(directory=_dist / "assets"), name="assets")
 
+    @app.get("/", include_in_schema=False)
+    def serve_spa_root():
+        return FileResponse(_dist / "index.html")
+
     @app.get("/{full_path:path}", include_in_schema=False)
     def serve_spa(full_path: str):
         return FileResponse(_dist / "index.html")
