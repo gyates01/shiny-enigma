@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from api.routes import recipes, stats, export
@@ -28,7 +29,7 @@ _images_dir = _data_dir / "images"
 _images_dir.mkdir(parents=True, exist_ok=True)
 app.mount("/images", StaticFiles(directory=_images_dir), name="images")
 
-# Serve built React app — html=True serves index.html for / and unknown paths (SPA mode)
+# Serve built React app
 _dist = Path(__file__).parent.parent / "frontend" / "dist"
 
 @app.get("/api/_distinfo")
@@ -44,5 +45,14 @@ def dist_info():
         "python": sys.executable,
     }
 
-if _dist.exists():
-    app.mount("/", StaticFiles(directory=_dist, html=True), name="spa")
+# Serve frontend assets (JS/CSS bundles)
+if (_dist / "assets").exists():
+    app.mount("/assets", StaticFiles(directory=_dist / "assets"), name="assets")
+
+# SPA catch-all: any unmatched route returns index.html so React Router works
+@app.get("/{full_path:path}")
+async def serve_spa(full_path: str):
+    index = _dist / "index.html"
+    if index.exists():
+        return FileResponse(str(index))
+    return JSONResponse({"error": "frontend not built", "dist": str(_dist)}, status_code=404)
