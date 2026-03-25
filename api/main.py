@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 
 print("=== api.main loading ===", flush=True)
 
-from api.routes import recipes, stats, export
+from api.routes import recipes, stats, export, pantry
 
 print("=== imports done ===", flush=True)
 
@@ -26,6 +26,7 @@ app.add_middleware(
 app.include_router(recipes.router, prefix="/api")
 app.include_router(stats.router,   prefix="/api")
 app.include_router(export.router,  prefix="/api")
+app.include_router(pantry.router,  prefix="/api")
 
 # Serve uploaded images
 _data_dir = Path(os.environ.get("DATA_DIR", str(Path(__file__).parent.parent / "data")))
