@@ -38,9 +38,11 @@ function AddMissingButton({ missingIngredients }) {
     <div style={{ marginTop: 8 }}>
       <button
         onClick={handleClick}
+        disabled={status === 'Adding...'}
         style={{
           background: '#1f2937', color: '#9ca3af', border: '1px solid #374151',
           borderRadius: 8, padding: '8px 14px', fontSize: 13, cursor: 'pointer',
+          opacity: status === 'Adding...' ? 0.6 : 1,
         }}
       >
         Add missing to pantry
