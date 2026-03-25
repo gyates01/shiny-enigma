@@ -27,3 +27,6 @@ frontend/node_modules/
 
 # Visual companion
 .superpowers/
+
+# Git worktrees
+.worktrees/
