@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from api.deps import get_db_path
 from recipe_extractor.scraper import extract_recipe
 from recipe_extractor.database import (
-    filter_recipes, get_recipe, save_recipe, delete_recipe, update_recipe
+    filter_recipes, get_recipe, get_recipe_by_url, save_recipe, delete_recipe, update_recipe
 )
 
 _ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
@@ -17,6 +17,27 @@ _EXT_MAP = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "i
 _MAX_IMAGE_BYTES = 10 * 1024 * 1024  # 10 MB
 
 router = APIRouter()
+
+@router.get("/debug-container")
+def debug_container():
+    import os, sys
+    app_dir = Path("/app")
+    def ls(p):
+        try:
+            return [str(x.relative_to(p)) for x in Path(p).iterdir()]
+        except Exception as e:
+            return [f"ERROR: {e}"]
+    return {
+        "cwd": os.getcwd(),
+        "file": __file__,
+        "python": sys.executable,
+        "app_exists": app_dir.exists(),
+        "app_contents": ls("/app"),
+        "frontend_exists": (app_dir / "frontend").exists(),
+        "dist_exists": (app_dir / "frontend" / "dist").exists(),
+        "dist_contents": ls("/app/frontend/dist"),
+    }
+
 
 
 class AddRecipeRequest(BaseModel):
@@ -66,6 +87,13 @@ def api_add_recipe(body: AddRecipeRequest, db: Path = Depends(get_db_path)):
     parsed = urlparse(url)
     if parsed.scheme not in ("http", "https") or not parsed.netloc:
         raise HTTPException(status_code=422, detail=f"Invalid URL: {url}")
+    existing = get_recipe_by_url(url, db_path=db)
+    if existing:
+        raise HTTPException(status_code=409, detail={
+            "message": "Recipe already in your collection",
+            "id": existing["id"],
+            "title": existing["title"],
+        })
     try:
         recipe = extract_recipe(url)
     except Exception as exc:
