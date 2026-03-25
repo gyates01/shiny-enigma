@@ -43,3 +43,20 @@ export const api = {
   getStats: () => request('/stats'),
   exportUrl: () => `${BASE}/export`,
 }
+
+// Pantry
+export const getPantry  = ()            => fetch('/api/pantry').then(r => r.json());
+export const addPantryItem = (name, note) =>
+  fetch('/api/pantry', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, note: note || undefined }),
+  });
+export const deletePantryItem = (id) =>
+  fetch(`/api/pantry/${id}`, { method: 'DELETE' });
+export const patchPantryNote = (id, note) =>
+  fetch(`/api/pantry/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ note }),
+  }).then(r => r.json());
