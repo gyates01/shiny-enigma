@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -39,7 +39,9 @@ except Exception as e:
 # Serve built React app
 _dist = Path(__file__).parent.parent / "frontend" / "dist"
 
-@app.get("/api/_distinfo")
+_misc_router = APIRouter()
+
+@_misc_router.get("/api/_distinfo")
 def dist_info():
     import sys
     contents = list(_dist.iterdir()) if _dist.exists() else []
@@ -57,11 +59,13 @@ if (_dist / "assets").exists():
     app.mount("/assets", StaticFiles(directory=_dist / "assets"), name="assets")
 
 # SPA catch-all: any unmatched route returns index.html so React Router works
-@app.get("/{full_path:path}")
+@_misc_router.get("/{full_path:path}")
 async def serve_spa(full_path: str):
     index = _dist / "index.html"
     if index.exists():
         return FileResponse(str(index))
     return JSONResponse({"error": "frontend not built", "dist": str(_dist)}, status_code=404)
+
+app.include_router(_misc_router)
 
 print(f"=== app ready, routes: {[getattr(r, 'path', repr(r)) for r in app.routes]} ===", flush=True)
