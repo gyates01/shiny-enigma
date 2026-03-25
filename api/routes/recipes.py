@@ -11,6 +11,8 @@ from recipe_extractor.scraper import extract_recipe
 from recipe_extractor.database import (
     filter_recipes, get_recipe, get_recipe_by_url, save_recipe, delete_recipe, update_recipe
 )
+from recipe_extractor.pantry import list_items
+from api.utils.normalizer import is_on_hand
 
 _ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 _EXT_MAP = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "image/gif": ".gif"}
@@ -70,15 +72,26 @@ def api_list_recipes(
     cuisine: Optional[str] = None,
     category: Optional[str] = None,
     max_time: Optional[int] = None,
+    makeable: bool = False,
     db: Path = Depends(get_db_path),
 ):
-    return filter_recipes(
+    recipes = filter_recipes(
         query=q or "",
         cuisine=cuisine or "",
         category=category or "",
         max_time=max_time,
         db_path=db,
     )
+    pantry_names = [item["name"] for item in list_items(db_path=db)]
+    for r in recipes:
+        if pantry_names:
+            full = get_recipe(r["id"], db_path=db)
+            r["makeable"] = all(is_on_hand(ing, pantry_names) for ing in full["ingredients"])
+        else:
+            r["makeable"] = False
+    if makeable:
+        recipes = [r for r in recipes if r["makeable"]]
+    return recipes
 
 
 @router.post("/recipes", status_code=201)
@@ -108,6 +121,11 @@ def api_get_recipe(recipe_id: int, db: Path = Depends(get_db_path)):
     recipe = get_recipe(recipe_id, db_path=db)
     if not recipe:
         raise HTTPException(status_code=404, detail="Recipe not found")
+    pantry_names = [item["name"] for item in list_items(db_path=db)]
+    recipe["ingredients"] = [
+        {"text": ing, "on_hand": is_on_hand(ing, pantry_names)}
+        for ing in recipe["ingredients"]
+    ]
     return recipe
 
 

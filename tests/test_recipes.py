@@ -64,7 +64,10 @@ def test_get_recipe_detail(client, monkeypatch):
 
     r = client.get(f"/api/recipes/{recipe_id}")
     assert r.status_code == 200
-    assert r.json()["ingredients"] == ["1 cup flour"]
+    ings = r.json()["ingredients"]
+    assert len(ings) == 1
+    assert ings[0]["text"] == "1 cup flour"
+    assert "on_hand" in ings[0]
 
 
 def test_get_recipe_not_found(client):
