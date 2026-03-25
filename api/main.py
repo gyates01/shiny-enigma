@@ -27,7 +27,10 @@ app.include_router(export.router,  prefix="/api")
 _data_dir = Path(os.environ.get("DATA_DIR", str(Path(__file__).parent.parent / "data")))
 _images_dir = _data_dir / "images"
 _images_dir.mkdir(parents=True, exist_ok=True)
-app.mount("/images", StaticFiles(directory=_images_dir), name="images")
+try:
+    app.mount("/images", StaticFiles(directory=_images_dir), name="images")
+except Exception as e:
+    print(f"WARNING: /images mount failed: {e}", flush=True)
 
 # Serve built React app
 _dist = Path(__file__).parent.parent / "frontend" / "dist"
