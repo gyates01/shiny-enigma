@@ -13,11 +13,12 @@ export default function Pantry() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    getPantry().then(setItems);
+    getPantry().then(setItems).catch(() => {});
     // Fetch makeable count
     fetch('/api/recipes?makeable=true')
       .then(r => r.json())
-      .then(rs => setMakeableCount(rs.length));
+      .then(rs => setMakeableCount(rs.length))
+      .catch(() => {});
   }, []);
 
   const grouped = useMemo(() => {
@@ -35,6 +36,10 @@ export default function Pantry() {
     const name = input.trim();
     if (!name) return;
     const res = await addPantryItem(name, null);
+    if (!res) {
+      setError('Something went wrong. Please try again.');
+      return;
+    }
     if (res.status === 409) {
       setError(`"${name}" is already in your pantry`);
       return;
@@ -43,19 +48,23 @@ export default function Pantry() {
       setError('Please enter an ingredient name');
       return;
     }
+    if (!res.ok) {
+      setError('Something went wrong. Please try again.');
+      return;
+    }
     const item = await res.json();
     setItems(prev => [...prev, item].sort((a, b) =>
       a.category.localeCompare(b.category) || a.name.localeCompare(b.name)
     ));
     setInput('');
     // Refresh makeable count
-    fetch('/api/recipes?makeable=true').then(r => r.json()).then(rs => setMakeableCount(rs.length));
+    fetch('/api/recipes?makeable=true').then(r => r.json()).then(rs => setMakeableCount(rs.length)).catch(() => {});
   }
 
   async function handleDelete(id) {
     await deletePantryItem(id);
     setItems(prev => prev.filter(i => i.id !== id));
-    fetch('/api/recipes?makeable=true').then(r => r.json()).then(rs => setMakeableCount(rs.length));
+    fetch('/api/recipes?makeable=true').then(r => r.json()).then(rs => setMakeableCount(rs.length)).catch(() => {});
   }
 
   const isAmber = (note) => note && /low|out/i.test(note);

@@ -45,18 +45,18 @@ export const api = {
 }
 
 // Pantry
-export const getPantry  = ()            => fetch('/api/pantry').then(r => r.json());
+export const getPantry  = ()            => fetch('/api/pantry').then(r => r.json()).catch(() => []);
 export const addPantryItem = (name, note) =>
   fetch('/api/pantry', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name, note: note || undefined }),
-  });
+  }).catch(() => null);
 export const deletePantryItem = (id) =>
-  fetch(`/api/pantry/${id}`, { method: 'DELETE' });
+  fetch(`/api/pantry/${id}`, { method: 'DELETE' }).catch(() => null);
 export const patchPantryNote = (id, note) =>
   fetch(`/api/pantry/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ note }),
-  }).then(r => r.json());
+  }).then(r => r.json()).catch(() => null);
