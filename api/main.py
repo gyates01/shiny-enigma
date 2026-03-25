@@ -5,7 +5,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+print("=== api.main loading ===", flush=True)
+
 from api.routes import recipes, stats, export
+
+print("=== imports done ===", flush=True)
 
 app = FastAPI(title="Recipe Extractor API")
 
@@ -59,3 +63,5 @@ async def serve_spa(full_path: str):
     if index.exists():
         return FileResponse(str(index))
     return JSONResponse({"error": "frontend not built", "dist": str(_dist)}, status_code=404)
+
+print(f"=== app ready, routes: {[getattr(r, 'path', repr(r)) for r in app.routes]} ===", flush=True)
