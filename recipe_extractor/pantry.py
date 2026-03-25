@@ -58,7 +58,7 @@ def delete_item(item_id: int, db_path: Path = DB_PATH) -> bool:
     return cur.rowcount > 0
 
 
-def update_note(item_id: int, note: str, db_path: Path = DB_PATH) -> Optional[dict]:
+def update_note(item_id: int, note: Optional[str], db_path: Path = DB_PATH) -> Optional[dict]:
     """Update the note field of a pantry item. Returns updated item or None if not found."""
     init_pantry_table(db_path)
     with _connect(db_path) as conn:
