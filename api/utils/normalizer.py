@@ -1,7 +1,6 @@
 """Ingredient normalization, category detection, and pantry matching."""
 
 import re
-from typing import Optional
 
 # Strip trailing prep notes: ", minced", "(optional)", "; to taste"
 _PREP_RE = re.compile(r'\s*,.*$|\s*\(.*?\)|\s*;.*$')
