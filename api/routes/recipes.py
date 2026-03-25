@@ -113,6 +113,11 @@ def api_add_recipe(body: AddRecipeRequest, db: Path = Depends(get_db_path)):
         raise HTTPException(status_code=422, detail=str(exc))
     row_id = save_recipe(recipe, db_path=db)
     saved = get_recipe(row_id, db_path=db)
+    pantry_names = [item["name"] for item in list_items(db_path=db)]
+    saved["ingredients"] = [
+        {"text": ing, "on_hand": is_on_hand(ing, pantry_names)}
+        for ing in saved["ingredients"]
+    ]
     return JSONResponse(content=saved, status_code=201)
 
 
@@ -141,7 +146,13 @@ def api_update_recipe(
     if not fields:
         raise HTTPException(status_code=422, detail="No fields to update")
     update_recipe(recipe_id, fields, db_path=db)
-    return get_recipe(recipe_id, db_path=db)
+    recipe = get_recipe(recipe_id, db_path=db)
+    pantry_names = [item["name"] for item in list_items(db_path=db)]
+    recipe["ingredients"] = [
+        {"text": ing, "on_hand": is_on_hand(ing, pantry_names)}
+        for ing in recipe["ingredients"]
+    ]
+    return recipe
 
 
 @router.delete("/recipes/{recipe_id}", status_code=204)

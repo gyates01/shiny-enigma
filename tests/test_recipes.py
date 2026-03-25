@@ -333,7 +333,12 @@ def test_update_recipe_api_updates_list_fields(client, monkeypatch):
     })
     assert r.status_code == 200
     data = r.json()
-    assert data["ingredients"] == ["butter", "sugar"]
+    ings = data["ingredients"]
+    assert len(ings) == 2
+    assert ings[0]["text"] == "butter"
+    assert "on_hand" in ings[0]
+    assert ings[1]["text"] == "sugar"
+    assert "on_hand" in ings[1]
     assert data["tags"] == ["sweet", "easy"]
 
 
