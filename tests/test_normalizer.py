@@ -87,3 +87,21 @@ def test_detects_meat():
 
 def test_unknown_falls_back_to_other():
     assert detect_category("xanthan gum") == "Other"
+
+
+def test_egg_does_not_match_eggplant():
+    assert is_on_hand("eggplant", ["egg"]) is False
+
+
+def test_butter_does_not_match_butternut_squash():
+    assert is_on_hand("butternut squash", ["butter"]) is False
+
+
+def test_butter_matches_peanut_butter():
+    # "butter" IS a whole word inside "peanut butter"
+    assert is_on_hand("peanut butter", ["butter"]) is True
+
+
+def test_rice_does_not_match_rice_flour_pantry_item():
+    # Existing direction test: "rice flour" in pantry must NOT match ingredient "rice"
+    assert is_on_hand("rice", ["rice flour"]) is False

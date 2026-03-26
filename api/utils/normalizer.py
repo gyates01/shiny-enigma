@@ -39,15 +39,19 @@ def normalize_ingredient(ingredient: str) -> str:
 
 
 def is_on_hand(ingredient: str, pantry_names: list[str]) -> bool:
-    """Return True if any pantry item name is a substring of the normalized ingredient.
+    """Return True if any pantry item name appears as a whole word in the normalized ingredient.
 
-    Intentionally one-directional: we check that the pantry item is contained
-    within the normalized ingredient string — NOT the other way around.
-    The reverse direction causes false positives: "rice flour" in pantry would
-    incorrectly match the ingredient "rice" because "rice" is in "rice flour".
+    Uses word-boundary matching to prevent partial-word false positives:
+    'egg' must not match 'eggplant', 'butter' must not match 'butternut squash'.
+    Intentionally one-directional: the pantry item must be contained within the
+    ingredient — not the reverse — so 'rice flour' in pantry does not match
+    the ingredient 'rice'.
     """
     norm = normalize_ingredient(ingredient)
-    return any(item.lower() in norm for item in pantry_names)
+    return any(
+        re.search(r'\b' + re.escape(item.lower()) + r'\b', norm)
+        for item in pantry_names
+    )
 
 
 # Category detection lookup. More-specific keys come before general ones
