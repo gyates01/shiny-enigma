@@ -71,3 +71,47 @@ def test_list_sorted_by_category_then_name(client):
     items = client.get("/api/pantry").json()
     names = [i["name"] for i in items]
     assert names == ["butter", "apple", "zucchini"]
+
+
+def test_add_item_returns_stock_fields(client):
+    r = client.post("/api/pantry", json={"name": "garlic"})
+    assert r.status_code == 201
+    data = r.json()
+    assert data["stock_mode"] == "qty"   # Produce → qty
+    assert data["stock_value"] is None
+
+
+def test_add_meat_gets_qty_mode(client):
+    r = client.post("/api/pantry", json={"name": "chicken"})
+    assert r.status_code == 201
+    assert r.json()["stock_mode"] == "qty"
+
+
+def test_add_pantry_item_gets_level_mode(client):
+    r = client.post("/api/pantry", json={"name": "flour"})
+    assert r.status_code == 201
+    assert r.json()["stock_mode"] == "level"
+
+
+def test_patch_stock_value(client):
+    add = client.post("/api/pantry", json={"name": "garlic"})
+    item_id = add.json()["id"]
+    r = client.patch(f"/api/pantry/{item_id}", json={"stock_value": "3"})
+    assert r.status_code == 200
+    assert r.json()["stock_value"] == "3"
+
+
+def test_patch_stock_mode(client):
+    add = client.post("/api/pantry", json={"name": "flour"})
+    item_id = add.json()["id"]
+    r = client.patch(f"/api/pantry/{item_id}", json={"stock_mode": "qty", "stock_value": None})
+    assert r.status_code == 200
+    assert r.json()["stock_mode"] == "qty"
+    assert r.json()["stock_value"] is None
+
+
+def test_patch_empty_body_returns_422(client):
+    add = client.post("/api/pantry", json={"name": "salt"})
+    item_id = add.json()["id"]
+    r = client.patch(f"/api/pantry/{item_id}", json={})
+    assert r.status_code == 422

@@ -54,9 +54,9 @@ export const addPantryItem = (name, note) =>
   }).catch(() => null);
 export const deletePantryItem = (id) =>
   fetch(`/api/pantry/${id}`, { method: 'DELETE' }).catch(() => null);
-export const patchPantryNote = (id, note) =>
+export const patchPantryItem = (id, fields) =>
   fetch(`/api/pantry/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ note }),
+    body: JSON.stringify(fields),
   }).then(r => r.json()).catch(() => null);
