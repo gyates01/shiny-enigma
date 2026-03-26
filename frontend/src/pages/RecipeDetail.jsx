@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { api } from '../lib/api'
+import { api, addPantryItem } from '../lib/api'
 
 const isProd = import.meta.env.PROD
 
@@ -16,42 +16,39 @@ function normalizeIngredient(text) {
 }
 
 function AddMissingButton({ missingIngredients }) {
-  const [status, setStatus] = useState('');
+  const [adding, setAdding] = useState(false)
+  const [status, setStatus] = useState('')
 
   async function handleClick() {
-    setStatus('Adding...');
-    let added = 0;
-    for (const text of missingIngredients) {
-      const name = normalizeIngredient(text);
-      if (!name) continue;
-      const res = await fetch('/api/pantry', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name }),
-      }).catch(() => null);
-      if (res && res.status === 201) added++;
-      // 409 = already in pantry, silently skip
-    }
-    setStatus(added > 0 ? `Added ${added} item${added !== 1 ? 's' : ''} to pantry` : 'All already in pantry');
-    setTimeout(() => setStatus(''), 3000);
+    setAdding(true)
+    const results = await Promise.all(
+      missingIngredients.map(text => {
+        const name = normalizeIngredient(text)
+        return name ? addPantryItem(name) : Promise.resolve(null)
+      })
+    )
+    const added = results.filter(r => r?.status === 201).length
+    setStatus(added > 0 ? `Added ${added} item${added !== 1 ? 's' : ''} to pantry` : 'All already in pantry')
+    setAdding(false)
+    setTimeout(() => setStatus(''), 3000)
   }
 
   return (
     <div style={{ marginTop: 8 }}>
       <button
         onClick={handleClick}
-        disabled={status === 'Adding...'}
+        disabled={adding}
         style={{
           background: '#1f2937', color: '#9ca3af', border: '1px solid #374151',
           borderRadius: 8, padding: '8px 14px', fontSize: 13, cursor: 'pointer',
-          opacity: status === 'Adding...' ? 0.6 : 1,
+          opacity: adding ? 0.6 : 1,
         }}
       >
         Add missing to pantry
       </button>
       {status && <span style={{ marginLeft: 10, fontSize: 12, color: '#6ee7b7' }}>{status}</span>}
     </div>
-  );
+  )
 }
 
 function cleanServings(s) {

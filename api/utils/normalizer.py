@@ -112,6 +112,6 @@ def detect_category(name: str) -> str:
     """Auto-detect pantry category from item name. Falls back to 'Other'."""
     lower = name.lower()
     for key, cat in CATEGORY_MAP.items():
-        if key in lower:
+        if re.search(r'\b' + re_escape(key) + r'\b', lower):
             return cat
     return "Other"

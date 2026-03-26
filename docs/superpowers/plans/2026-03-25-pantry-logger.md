@@ -10,24 +10,32 @@
 
 ---
 
-## Progress (updated 2026-03-25)
+## Progress (updated 2026-03-25) — COMPLETE ✅
 
-**Branch:** `feature/pantry-logger`
-**Worktree:** `/c/Users/yates/.config/superpowers/worktrees/shiny-enigma/pantry-logger`
-**Tests passing:** 77
+**Branch:** Merged to `production` (local-only gating via `import.meta.env.PROD`)
+**Tests passing:** 77+
 
 | Task | Status | Notes |
 |------|--------|-------|
 | Task 1 — Pantry DB layer | ✅ Done | |
-| Task 2 — Normalizer | ✅ Done | |
+| Task 2 — Normalizer | ✅ Done | Word-boundary regex fix applied |
 | Task 3 — Pantry API routes | ✅ Done | |
 | Task 4 — Recipe on_hand integration | ✅ Done | |
-| Fix — PUT/POST ingredient shape | ✅ Done | PUT + POST now return `{text, on_hand}` objects, not raw strings |
-| Task 5 — Pantry page frontend | ⏳ Pending | |
-| Task 6 — Recipe Detail ingredient sections | ⏳ Pending | |
-| Task 7 — Nav + routing | ⏳ Pending | |
+| Fix — PUT/POST ingredient shape | ✅ Done | PUT + POST return `{text, on_hand}` objects |
+| Task 5 — Pantry page frontend | ✅ Done | Pantry.jsx with category groups |
+| Task 6 — Recipe Detail ingredient sections | ✅ Done | On hand / Still need sections, "Add missing" button |
+| Task 7 — Nav + routing | ✅ Done | Pantry tab hidden in prod builds via `isProd` |
 
-**Next step:** Dispatch Task 5 implementer subagent (Pantry.jsx + api.js pantry helpers).
+**Post-merge fixes applied:**
+- `[object Object]` in EditRecipe ingredients (extracted `.text` from ingredient objects)
+- Servings bracket display (`"['4']"` → `"4"`) — cleanServings() in RecipeDetail
+- Delete button moved to title bar in RecipeDetail
+- Bottom tab bar visible on desktop fixed (removed inline `display: flex` from navStyle)
+- Production recipe detail: removed pantry artifacts (doubled heading, prompt, Add missing button)
+- `AddMissingButton`: now uses `api.addPantryItem` + `Promise.all` for parallel adds
+- `detect_category()`: word-boundary matching (consistent with `is_on_hand`)
+
+**Next feature:** Ingredient checklist layout + pantry stock levels — spec at `docs/superpowers/specs/2026-03-25-ingredient-checkboxes-pantry-stock-design.md`
 
 **Tech Stack:** Python 3.x, FastAPI, SQLite (via `recipe_extractor.database._connect`), pytest + httpx, React 18, Vite
 

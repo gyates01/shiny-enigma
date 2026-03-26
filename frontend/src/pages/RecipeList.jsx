@@ -30,11 +30,11 @@ function RecipeCard({ recipe, onClick }) {
       }}
     >
       {recipe.image_url ? (
-        <div style={{ position: 'relative', height: 162, overflow: 'hidden' }}>
+        <div style={{ position: 'relative', height: 190, overflow: 'hidden' }}>
           <img src={recipe.image_url} alt=""
             style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
           <div style={{
-            position: 'absolute', bottom: 0, left: 0, right: 0, height: 60,
+            position: 'absolute', bottom: 0, left: 0, right: 0, height: 70,
             background: 'linear-gradient(to top, rgba(26,26,26,0.95), transparent)',
           }} />
           {cuisines.length > 0 && (
@@ -51,10 +51,10 @@ function RecipeCard({ recipe, onClick }) {
         </div>
       ) : (
         <div style={{
-          position: 'relative', height: 75,
+          position: 'relative', height: 95,
           background: 'linear-gradient(135deg, #1e1a3a 0%, #12121f 100%)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 24,
+          fontSize: 28,
         }}>
           🍽️
           {cuisines.length > 0 && (
@@ -71,7 +71,7 @@ function RecipeCard({ recipe, onClick }) {
         </div>
       )}
 
-      <div style={{ padding: '12px 14px 14px', flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ padding: '14px 16px 16px', flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ fontWeight: 700, fontSize: 16, lineHeight: 1.3, color: 'var(--text)' }}>
           {recipe.title}
         </div>
@@ -145,12 +145,12 @@ export default function RecipeList() {
 
   const filterStyle = {
     background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)',
-    borderRadius: 10, padding: '9px 13px', fontSize: 14, cursor: 'pointer', flex: '1 1 130px',
+    borderRadius: 10, padding: '10px 14px', fontSize: 14, cursor: 'pointer', flex: '1 1 140px',
   }
 
   return (
-    <div className="page" style={{ maxWidth: 1100 }}>
-      <h1 style={{ fontSize: 26, fontWeight: 800, marginBottom: 17, letterSpacing: '-0.5px' }}>
+    <div className="page" style={{ maxWidth: 1200 }}>
+      <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 20, letterSpacing: '-0.5px' }}>
         My Recipes
         {!loading && recipes.length > 0 && (
           <span style={{ fontSize: 15, fontWeight: 400, color: 'var(--text-dim)', marginLeft: 12 }}>
@@ -164,10 +164,10 @@ export default function RecipeList() {
         placeholder="🔍  Search by name, ingredient, cuisine..."
         value={query}
         onChange={e => setQuery(e.target.value)}
-        style={{ marginBottom: 12, fontSize: 14, padding: '11px 14px' }}
+        style={{ marginBottom: 14, fontSize: 14, padding: '12px 16px' }}
       />
 
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 22, alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 24, alignItems: 'center' }}>
         <select value={filters.cuisine} onChange={e => setFilter('cuisine', e.target.value)} style={filterStyle}>
           <option value="">All cuisines</option>
           {cuisines.map(c => <option key={c} value={c}>{c}</option>)}
@@ -198,7 +198,7 @@ export default function RecipeList() {
           <p style={{ fontSize: 16 }}>{query || hasFilters ? 'No recipes match your filters.' : 'No recipes yet — add your first one!'}</p>
         </div>
       )}
-      <div style={{ display: 'grid', gap: 17, gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))' }}>
+      <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))' }}>
         {recipes.map(r => (
           <RecipeCard key={r.id} recipe={r} onClick={() => navigate(`/recipes/${r.id}`)} />
         ))}
