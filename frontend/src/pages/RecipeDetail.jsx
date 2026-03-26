@@ -184,7 +184,7 @@ export default function RecipeDetail() {
   ].filter(Boolean)
 
   return (
-    <div className="page">
+    <div className="page" style={recipe.image_url ? { paddingBottom: 0 } : undefined}>
       <button onClick={() => navigate('/recipes')} style={{
         background: 'none', border: 'none', color: '#888', cursor: 'pointer',
         marginBottom: 16, fontSize: 14,
@@ -211,12 +211,16 @@ export default function RecipeDetail() {
         }}>
           <img src={recipe.image_url} alt={recipe.title}
             style={{ width: '100%', display: 'block' }} />
+          <div style={{
+            position: 'absolute', bottom: 0, left: 0, right: 0, height: 80,
+            background: 'linear-gradient(to bottom, transparent, var(--bg))',
+          }} />
         </div>
       )}
 
       <div style={{
         position: 'relative', zIndex: 1, background: 'var(--bg)',
-        ...(recipe.image_url ? { borderRadius: '20px 20px 0 0', marginTop: -28, paddingTop: 24 } : {}),
+        ...(recipe.image_url ? { borderRadius: '20px 20px 0 0', marginTop: -28, paddingTop: 24, paddingBottom: 24 } : {}),
       }}>
 
       <a href={recipe.source_url} target="_blank" rel="noreferrer"
