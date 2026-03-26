@@ -1,8 +1,88 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getPantry, addPantryItem, deletePantryItem } from '../lib/api';
+import { getPantry, addPantryItem, deletePantryItem, patchPantryItem } from '../lib/api';
 
 const CATEGORY_ORDER = ['Produce', 'Dairy', 'Meat', 'Pantry', 'Spices', 'Other'];
+
+const LEVEL_CYCLE = ['full', 'med', 'low', null];
+const LEVEL_STYLE = {
+  full: { bg: '#14532d', color: '#86efac', border: 'none', label: 'Full' },
+  med:  { bg: '#451a03', color: '#fcd34d', border: 'none', label: 'Med'  },
+  low:  { bg: '#450a0a', color: '#fca5a5', border: 'none', label: 'Low'  },
+};
+const LEVEL_UNSET = { bg: 'transparent', color: '#4b5563', border: '1px solid #374151', label: '——' };
+
+function StockControl({ item, onUpdate }) {
+  const isQty = item.stock_mode === 'qty';
+  const unit = item.category === 'Meat' ? 'lbs' : 'ea';
+  const [localQty, setLocalQty] = useState(item.stock_value ?? '');
+
+  useEffect(() => {
+    setLocalQty(item.stock_value ?? '');
+  }, [item.stock_value]);
+
+  function cycleLevel() {
+    const idx = LEVEL_CYCLE.indexOf(item.stock_value);
+    const next = LEVEL_CYCLE[(idx + 1) % LEVEL_CYCLE.length];
+    onUpdate(item.id, { stock_value: next });
+  }
+
+  function handleQtyBlur() {
+    const val = localQty.trim();
+    onUpdate(item.id, { stock_value: val || null });
+  }
+
+  function toggleMode() {
+    const newMode = isQty ? 'level' : 'qty';
+    onUpdate(item.id, { stock_mode: newMode, stock_value: null });
+  }
+
+  const ls = LEVEL_STYLE[item.stock_value] ?? LEVEL_UNSET;
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+      {isQty ? (
+        <>
+          <input
+            type="number"
+            min="0"
+            step="0.5"
+            value={localQty}
+            onChange={e => setLocalQty(e.target.value)}
+            onBlur={handleQtyBlur}
+            style={{
+              width: 52, background: '#1f2937', border: '1px solid #374151',
+              borderRadius: 6, padding: '2px 6px', color: '#9ca3af',
+              fontSize: 12, textAlign: 'right',
+            }}
+          />
+          <span style={{ fontSize: 11, color: '#6b7280' }}>{unit}</span>
+        </>
+      ) : (
+        <button
+          onClick={cycleLevel}
+          style={{
+            background: ls.bg, color: ls.color, border: ls.border,
+            borderRadius: 99, padding: '2px 8px',
+            fontSize: 11, cursor: 'pointer', fontWeight: 500, lineHeight: 1.4,
+          }}
+        >
+          {ls.label}
+        </button>
+      )}
+      <button
+        onClick={toggleMode}
+        title="Switch stock mode"
+        style={{
+          background: 'none', border: 'none', color: '#4b5563',
+          fontSize: 13, cursor: 'pointer', padding: '0 2px', lineHeight: 1,
+        }}
+      >
+        ⇄
+      </button>
+    </div>
+  );
+}
 
 export default function Pantry() {
   const [items, setItems]         = useState([]);
@@ -65,6 +145,16 @@ export default function Pantry() {
     await deletePantryItem(id);
     setItems(prev => prev.filter(i => i.id !== id));
     fetch('/api/recipes?makeable=true').then(r => r.json()).then(rs => setMakeableCount(rs.length)).catch(() => {});
+  }
+
+  async function handleStockUpdate(id, fields) {
+    // Optimistic update
+    setItems(prev => prev.map(i => i.id === id ? { ...i, ...fields } : i));
+    const result = await patchPantryItem(id, fields);
+    if (!result) {
+      // Revert on error
+      getPantry().then(setItems).catch(() => {});
+    }
   }
 
   const isAmber = (note) => note && /low|out/i.test(note);
@@ -149,24 +239,27 @@ export default function Pantry() {
                   padding: '9px 12px', background: '#1f2937', borderRadius: 8,
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
                   <span style={{ color: '#f3f4f6', fontWeight: 500 }}>{item.name}</span>
                   {item.note && (
                     <span style={{
                       background: isAmber(item.note) ? '#451a03' : '#374151',
                       color: isAmber(item.note) ? '#fbbf24' : '#9ca3af',
-                      fontSize: 10, padding: '2px 7px', borderRadius: 99,
+                      fontSize: 10, padding: '2px 7px', borderRadius: 99, whiteSpace: 'nowrap',
                     }}>
                       {item.note}
                     </span>
                   )}
                 </div>
-                <button
-                  onClick={() => handleDelete(item.id)}
-                  style={{ background: 'none', border: 'none', color: '#4b5563', fontSize: 16, cursor: 'pointer', padding: '0 4px' }}
-                >
-                  ×
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                  <StockControl item={item} onUpdate={handleStockUpdate} />
+                  <button
+                    onClick={() => handleDelete(item.id)}
+                    style={{ background: 'none', border: 'none', color: '#4b5563', fontSize: 16, cursor: 'pointer', padding: '0 4px' }}
+                  >
+                    ×
+                  </button>
+                </div>
               </div>
             ))}
           </div>
