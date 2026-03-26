@@ -1,6 +1,7 @@
 """Ingredient normalization, category detection, and pantry matching."""
 
 import re
+from re import escape as re_escape
 
 # Strip trailing prep notes: ", minced", "(optional)", "; to taste"
 _PREP_RE = re.compile(r'\s*,.*$|\s*\(.*?\)|\s*;.*$')
@@ -47,7 +48,7 @@ def is_on_hand(ingredient: str, pantry_names: list[str]) -> bool:
     incorrectly match the ingredient "rice" because "rice" is in "rice flour".
     """
     norm = normalize_ingredient(ingredient)
-    return any(item.lower() in norm for item in pantry_names)
+    return any(re.search(r'\b' + re_escape(item.lower()) + r'\b', norm) for item in pantry_names)
 
 
 # Category detection lookup. More-specific keys come before general ones

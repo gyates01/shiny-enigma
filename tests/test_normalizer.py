@@ -63,6 +63,22 @@ def test_on_hand_empty_pantry():
     assert is_on_hand("garlic", []) is False
 
 
+def test_no_false_positive_salt_in_unsalted():
+    assert is_on_hand("1 tbsp unsalted butter", ["salt"]) is False
+
+
+def test_no_false_positive_egg_in_eggplant():
+    assert is_on_hand("1 eggplant", ["egg"]) is False
+
+
+def test_no_false_positive_oil_in_broiled():
+    assert is_on_hand("broiled chicken thighs", ["oil"]) is False
+
+
+def test_no_false_positive_lemon_in_lemongrass():
+    assert is_on_hand("2 stalks lemongrass", ["lemon"]) is False
+
+
 # --- detect_category ---
 
 def test_detects_produce():
