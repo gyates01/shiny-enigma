@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 
+const isProd = import.meta.env.PROD
+
 // Mirrors api/utils/normalizer.py — strips quantities/units/prep from ingredient strings
 function normalizeIngredient(text) {
   let s = text.toLowerCase();
@@ -137,10 +139,12 @@ export default function RecipeDetail() {
     api.getRecipe(id)
       .then(setRecipe)
       .catch(e => setError(e.message))
-    fetch('/api/pantry')
-      .then(r => r.json())
-      .then(items => setPantryEmpty(items.length === 0))
-      .catch(() => {})
+    if (!isProd) {
+      fetch('/api/pantry')
+        .then(r => r.json())
+        .then(items => setPantryEmpty(items.length === 0))
+        .catch(() => {})
+    }
   }, [id])
 
   const toggleCheck = (i) => setChecked(prev => ({ ...prev, [i]: !prev[i] }))
@@ -234,51 +238,123 @@ export default function RecipeDetail() {
             )}
           </div>
 
-          {/* Pantry prompt — only when pantry is truly empty */}
-          {pantryEmpty && recipe.ingredients.length > 0 && (
-            <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 8 }}>
-              Add items to your pantry to see what you have on hand.
-            </p>
-          )}
-
-          {/* On hand section */}
-          {recipe.ingredients.some(i => i.on_hand) && (
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 6 }}>On hand</div>
-              {recipe.ingredients.filter(i => i.on_hand).map((ing, idx) => (
-                <div key={idx} style={{
-                  padding: '8px 12px', background: '#1f2937',
-                  borderLeft: '3px solid #22c55e', borderRadius: 8, marginBottom: 3,
-                  color: '#f3f4f6', fontSize: 14,
-                }}>
-                  {imperial ? toImperial(ing.text) : ing.text}
+          {isProd ? (
+            // Production: flat checklist, no pantry UI
+            recipe.ingredients.map((ing, i) => {
+              const text = imperial ? toImperial(ing.text) : ing.text
+              return (
+                <div key={i} onClick={() => toggleCheck(i)}
+                  role="checkbox" tabIndex={0} aria-checked={!!checked[i]}
+                  onKeyDown={e => (e.key === ' ' || e.key === 'Enter') && toggleCheck(i)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '8px 0', borderBottom: '1px solid #1e1e1e', cursor: 'pointer',
+                  }}
+                >
+                  <span style={{
+                    width: 18, height: 18, borderRadius: 4, border: '2px solid',
+                    borderColor: checked[i] ? '#7c6af7' : '#444',
+                    background: checked[i] ? '#7c6af7' : 'transparent',
+                    flexShrink: 0, display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', fontSize: 11, color: '#fff',
+                  }}>
+                    {checked[i] && '✓'}
+                  </span>
+                  <span style={{
+                    fontSize: 14,
+                    color: checked[i] ? '#555' : '#f3f4f6',
+                    textDecoration: checked[i] ? 'line-through' : 'none',
+                  }}>
+                    {text}
+                  </span>
                 </div>
-              ))}
-            </div>
-          )}
+              )
+            })
+          ) : (
+            // Dev: pantry on-hand sections with checklist rows
+            <>
+              {pantryEmpty && (
+                <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 8 }}>
+                  Add items to your pantry to see what you have on hand.
+                </p>
+              )}
 
-          {/* Still need section */}
-          {recipe.ingredients.some(i => !i.on_hand) && (
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 6 }}>
-                {recipe.ingredients.some(i => i.on_hand) ? 'Still need' : 'Ingredients'}
-              </div>
-              {recipe.ingredients.filter(i => !i.on_hand).map((ing, idx) => (
-                <div key={idx} style={{
-                  padding: '8px 12px', background: '#1f2937',
-                  borderLeft: recipe.ingredients.some(i => i.on_hand) ? '3px solid #ef4444' : '3px solid #374151',
-                  borderRadius: 8, marginBottom: 3,
-                  color: '#f3f4f6', fontSize: 14,
-                }}>
-                  {imperial ? toImperial(ing.text) : ing.text}
+              {recipe.ingredients.some(i => i.on_hand) && (
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 6 }}>On hand</div>
+                  {recipe.ingredients.map((ing, i) => !ing.on_hand ? null : (
+                    <div key={i} onClick={() => toggleCheck(i)}
+                      role="checkbox" tabIndex={0} aria-checked={!!checked[i]}
+                      onKeyDown={e => (e.key === ' ' || e.key === 'Enter') && toggleCheck(i)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 10,
+                        padding: '8px 0', borderBottom: '1px solid #1e1e1e',
+                        borderLeft: '3px solid #22c55e', paddingLeft: 10, cursor: 'pointer',
+                      }}
+                    >
+                      <span style={{
+                        width: 18, height: 18, borderRadius: 4, border: '2px solid',
+                        borderColor: checked[i] ? '#7c6af7' : '#444',
+                        background: checked[i] ? '#7c6af7' : 'transparent',
+                        flexShrink: 0, display: 'flex', alignItems: 'center',
+                        justifyContent: 'center', fontSize: 11, color: '#fff',
+                      }}>
+                        {checked[i] && '✓'}
+                      </span>
+                      <span style={{
+                        fontSize: 14,
+                        color: checked[i] ? '#555' : '#f3f4f6',
+                        textDecoration: checked[i] ? 'line-through' : 'none',
+                      }}>
+                        {imperial ? toImperial(ing.text) : ing.text}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
+              )}
 
-          {/* Add missing to pantry */}
-          {recipe.ingredients.some(i => !i.on_hand) && (
-            <AddMissingButton missingIngredients={recipe.ingredients.filter(i => !i.on_hand).map(i => i.text)} />
+              {recipe.ingredients.some(i => !i.on_hand) && (
+                <div style={{ marginBottom: 12 }}>
+                  {recipe.ingredients.some(i => i.on_hand) && (
+                    <div style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 6 }}>Still need</div>
+                  )}
+                  {recipe.ingredients.map((ing, i) => ing.on_hand ? null : (
+                    <div key={i} onClick={() => toggleCheck(i)}
+                      role="checkbox" tabIndex={0} aria-checked={!!checked[i]}
+                      onKeyDown={e => (e.key === ' ' || e.key === 'Enter') && toggleCheck(i)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 10,
+                        padding: '8px 0', borderBottom: '1px solid #1e1e1e',
+                        borderLeft: recipe.ingredients.some(j => j.on_hand) ? '3px solid #ef4444' : 'none',
+                        paddingLeft: recipe.ingredients.some(j => j.on_hand) ? 10 : 0,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <span style={{
+                        width: 18, height: 18, borderRadius: 4, border: '2px solid',
+                        borderColor: checked[i] ? '#7c6af7' : '#444',
+                        background: checked[i] ? '#7c6af7' : 'transparent',
+                        flexShrink: 0, display: 'flex', alignItems: 'center',
+                        justifyContent: 'center', fontSize: 11, color: '#fff',
+                      }}>
+                        {checked[i] && '✓'}
+                      </span>
+                      <span style={{
+                        fontSize: 14,
+                        color: checked[i] ? '#555' : '#f3f4f6',
+                        textDecoration: checked[i] ? 'line-through' : 'none',
+                      }}>
+                        {imperial ? toImperial(ing.text) : ing.text}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {recipe.ingredients.some(i => !i.on_hand) && (
+                <AddMissingButton missingIngredients={recipe.ingredients.filter(i => !i.on_hand).map(i => i.text)} />
+              )}
+            </>
           )}
         </section>
       )}
