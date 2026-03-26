@@ -1,9 +1,11 @@
 import { NavLink } from 'react-router-dom'
 
+const isProd = import.meta.env.PROD
+
 const links = [
   { to: '/recipes', label: 'Recipes' },
   { to: '/add',     label: '+ Add'  },
-  { to: '/pantry',  label: 'Pantry' },
+  ...(!isProd ? [{ to: '/pantry', label: 'Pantry' }] : []),
   { to: '/stats',   label: 'Stats'  },
 ]
 
