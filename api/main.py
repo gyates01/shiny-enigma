@@ -5,16 +5,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-print("=== api.main loading ===", flush=True)
-
 from api.routes import recipes, stats, export
 
-print("=== imports done ===", flush=True)
-
 app = FastAPI(title="Recipe Extractor API")
-
-import logging
-_logger = logging.getLogger("uvicorn.error")
 
 app.add_middleware(
     CORSMiddleware,
@@ -33,26 +26,13 @@ _images_dir = _data_dir / "images"
 try:
     _images_dir.mkdir(parents=True, exist_ok=True)
     app.mount("/images", StaticFiles(directory=_images_dir), name="images")
-except Exception as e:
-    print(f"WARNING: /images setup failed: {e}", flush=True)
+except Exception:
+    pass
 
 # Serve built React app
 _dist = Path(__file__).parent.parent / "frontend" / "dist"
 
 _misc_router = APIRouter()
-
-@_misc_router.get("/api/_distinfo")
-def dist_info():
-    import sys
-    contents = list(_dist.iterdir()) if _dist.exists() else []
-    return {
-        "dist_path": str(_dist),
-        "exists": _dist.exists(),
-        "contents": [str(p) for p in contents],
-        "cwd": str(Path.cwd()),
-        "file": __file__,
-        "python": sys.executable,
-    }
 
 # Serve frontend assets (JS/CSS bundles)
 if (_dist / "assets").exists():
@@ -67,5 +47,3 @@ async def serve_spa(full_path: str):
     return JSONResponse({"error": "frontend not built", "dist": str(_dist)}, status_code=404)
 
 app.include_router(_misc_router)
-
-print(f"=== app ready, routes: {[getattr(r, 'path', repr(r)) for r in app.routes]} ===", flush=True)

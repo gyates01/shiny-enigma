@@ -138,7 +138,7 @@ Ingredient list is split into two labeled sections:
 - **On hand** — items where `on_hand: true`, green left border (`border-left: 3px solid #22c55e`)
 - **Still need** — items where `on_hand: false`, red left border (`border-left: 3px solid #ef4444`)
 
-Below the sections: **"Add missing to pantry"** button — bulk-posts all "still need" ingredient base names to `POST /api/pantry` (strips quantities/prep via the same normalization the backend uses, client-side preview before posting).
+Below the sections: **"Add missing to pantry"** button — bulk-posts all "still need" ingredient base names to `POST /api/pantry`. No confirmation step: clicking the button fires immediately, normalizing each missing ingredient client-side (same regex pipeline as the backend) and posting them in sequence. Items already in the pantry (409 response) are silently skipped. A brief inline success message shows how many items were added.
 
 If pantry is empty (no items), ingredient list renders as normal (no sections, no borders) with a subtle prompt: `"Add items to your pantry to see what you have on hand."`
 

@@ -8,6 +8,27 @@
 
 **Prerequisite:** The web UI plan (`docs/superpowers/plans/2026-03-22-web-ui.md`) must be executed first. This plan assumes `api/routes/recipes.py`, `api/main.py`, `frontend/src/pages/RecipeDetail.jsx`, `frontend/src/App.jsx`, and `frontend/src/components/Nav.jsx` already exist.
 
+---
+
+## Progress (updated 2026-03-25)
+
+**Branch:** `feature/pantry-logger`
+**Worktree:** `/c/Users/yates/.config/superpowers/worktrees/shiny-enigma/pantry-logger`
+**Tests passing:** 77
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Task 1 — Pantry DB layer | ✅ Done | |
+| Task 2 — Normalizer | ✅ Done | |
+| Task 3 — Pantry API routes | ✅ Done | |
+| Task 4 — Recipe on_hand integration | ✅ Done | |
+| Fix — PUT/POST ingredient shape | ✅ Done | PUT + POST now return `{text, on_hand}` objects, not raw strings |
+| Task 5 — Pantry page frontend | ⏳ Pending | |
+| Task 6 — Recipe Detail ingredient sections | ⏳ Pending | |
+| Task 7 — Nav + routing | ⏳ Pending | |
+
+**Next step:** Dispatch Task 5 implementer subagent (Pantry.jsx + api.js pantry helpers).
+
 **Tech Stack:** Python 3.x, FastAPI, SQLite (via `recipe_extractor.database._connect`), pytest + httpx, React 18, Vite
 
 ---

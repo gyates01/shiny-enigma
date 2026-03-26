@@ -46,12 +46,17 @@ body {
 .btn-primary:hover:not(:disabled) { opacity: 0.85; }
 .btn-danger { background: var(--danger); color: #fff; }
 
-input[type="text"], input[type="url"] {
+input, textarea, select {
   width: 100%; padding: 10px 14px; border-radius: 8px;
   border: 1px solid var(--border); background: var(--surface);
-  color: var(--text); font-size: 15px;
+  color: var(--text); font-size: 15px; font-family: inherit;
 }
-input:focus { outline: 2px solid var(--accent); border-color: transparent; }
+input:focus, textarea:focus, select:focus {
+  outline: 2px solid var(--accent); border-color: transparent;
+}
+textarea { resize: vertical; line-height: 1.5; }
+select { cursor: pointer; appearance: none; }
+select option { background: var(--surface); }
 
 .error { color: var(--danger); font-size: 14px; margin-top: 8px; }
 .dim { color: var(--text-dim); font-size: 13px; }

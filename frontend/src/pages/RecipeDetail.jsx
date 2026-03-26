@@ -8,11 +8,77 @@ function fmtTime(mins) {
   return h ? `${h}h ${m}m` : `${m}m`
 }
 
+const METRIC_RE = /\d+(?:\.\d+)?\s*(?:grams?|g|kg|kilograms?|ml|milliliters?|millilitres?|liters?|litres?)\b/i
+
+function hasMetricUnits(ingredients = []) {
+  return ingredients.some(ing => METRIC_RE.test(ing))
+}
+
+const CUP_FRACTIONS = [
+  [7/8, '⅞'], [3/4, '¾'], [2/3, '⅔'], [5/8, '⅝'],
+  [1/2, '½'], [3/8, '⅜'], [1/3, '⅓'], [1/4, '¼'], [1/8, '⅛'],
+]
+
+function fmtCups(cups) {
+  if (cups <= 0) return '0 cups'
+  const whole = Math.floor(cups)
+  const frac = cups - whole
+  let fracStr = ''
+  if (frac > 0.05) {
+    const match = CUP_FRACTIONS.find(([v]) => Math.abs(frac - v) < 0.07)
+    fracStr = match ? match[1] : `${+frac.toFixed(2)}`
+  }
+  const label = (whole + (frac > 0.05 ? 0.5 : 0)) > 1 ? 'cups' : 'cup'
+  if (whole === 0) return `${fracStr} ${label}`
+  if (!fracStr)    return `${whole} ${label}`
+  return `${whole} ${fracStr} cups`
+}
+
+function mlToUsVolume(ml) {
+  if (ml <= 7.5)  return `${+(ml / 4.929).toFixed(1)} tsp`
+  if (ml <= 15)   return `${+(ml / 14.787).toFixed(1)} tbsp`
+  if (ml < 59)    return `${+(ml / 14.787).toFixed(1)} tbsp`
+  return fmtCups(ml / 236.588)
+}
+
+function toImperial(text) {
+  // grams → oz (with helpful hints) or lbs
+  text = text.replace(/(\d+(?:\.\d+)?)\s*(?:grams?|g)\b/gi, (_, n) => {
+    const g = parseFloat(n)
+    if (g >= 454) {
+      const lbs = +(g / 453.592).toFixed(2)
+      return `${lbs} lbs (~${fmtCups(lbs * 2)})`
+    }
+    const oz = +(g * 0.035274).toFixed(1)
+    if (oz < 4) return `${oz} oz (~${+(g / 14.175).toFixed(1)} tbsp)`
+    const cups = fmtCups(oz / 8)
+    if (oz >= 15) return `${oz} oz (~1 lb / ~${cups})`
+    if (oz >= 7 && oz <= 9) return `${oz} oz (~½ lb / ~${cups})`
+    return `${oz} oz (~${cups})`
+  })
+  // kg → lbs
+  text = text.replace(/(\d+(?:\.\d+)?)\s*(?:kilograms?|kg)\b/gi, (_, n) =>
+    `${+(parseFloat(n) * 2.20462).toFixed(1)} lbs`
+  )
+  // ml → tsp / tbsp / cups
+  text = text.replace(/(\d+(?:\.\d+)?)\s*(?:milliliters?|millilitres?|ml)\b/gi, (_, n) =>
+    mlToUsVolume(parseFloat(n))
+  )
+  // L → cups or quarts
+  text = text.replace(/(\d+(?:\.\d+)?)\s*(?:liters?|litres?|L)\b/g, (_, n) => {
+    const cups = parseFloat(n) * 4.22675
+    if (cups >= 4) return `${+(parseFloat(n) * 1.05669).toFixed(1)} qts`
+    return fmtCups(cups)
+  })
+  return text
+}
+
 export default function RecipeDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const [recipe, setRecipe] = useState(null)
   const [checked, setChecked] = useState({})
+  const [imperial, setImperial] = useState(false)
   const [error, setError] = useState('')
   const [deleting, setDeleting] = useState(false)
 
@@ -55,7 +121,7 @@ export default function RecipeDetail() {
 
   return (
     <div className="page">
-      <button onClick={() => navigate(-1)} style={{
+      <button onClick={() => navigate('/recipes')} style={{
         background: 'none', border: 'none', color: '#888', cursor: 'pointer',
         marginBottom: 16, fontSize: 14,
       }}>← Back</button>
@@ -72,7 +138,7 @@ export default function RecipeDetail() {
         <img
           src={recipe.image_url}
           alt={recipe.title}
-          style={{ width: '100%', maxHeight: 300, objectFit: 'cover', borderRadius: 12, marginBottom: 16 }}
+          style={{ width: '100%', maxHeight: 750, objectFit: 'cover', borderRadius: 12, marginBottom: 16 }}
         />
       )}
 
@@ -95,26 +161,45 @@ export default function RecipeDetail() {
 
       {recipe.ingredients?.length > 0 && (
         <section style={{ marginBottom: 28 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Ingredients</h2>
-          {recipe.ingredients.map((ing, i) => (
-            <div key={i} onClick={() => toggleCheck(i)}
-              role="checkbox" tabIndex={0} aria-checked={!!checked[i]}
-              onKeyDown={e => (e.key === ' ' || e.key === 'Enter') && toggleCheck(i)}
-              style={{
-              display: 'flex', gap: 12, alignItems: 'flex-start',
-              padding: '8px 0', borderBottom: '1px solid #1e1e1e', cursor: 'pointer',
-              textDecoration: checked[i] ? 'line-through' : 'none',
-              color: checked[i] ? '#555' : 'inherit',
-            }}>
-              <span style={{
-                width: 20, height: 20, borderRadius: 4, border: '2px solid',
-                borderColor: checked[i] ? '#7c6af7' : '#444',
-                background: checked[i] ? '#7c6af7' : 'transparent',
-                flexShrink: 0, marginTop: 2,
-              }} />
-              {ing}
-            </div>
-          ))}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+            <h2 style={{ fontSize: 16, fontWeight: 600 }}>Ingredients</h2>
+            {hasMetricUnits(recipe.ingredients) && (
+              <button
+                onClick={() => setImperial(v => !v)}
+                style={{
+                  background: imperial ? 'var(--accent)' : 'transparent',
+                  border: '1px solid var(--accent)',
+                  color: imperial ? '#fff' : 'var(--accent)',
+                  borderRadius: 20, padding: '3px 12px', fontSize: 12,
+                  fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s',
+                }}
+              >
+                {imperial ? '⇄ Metric' : '⇄ Imperial'}
+              </button>
+            )}
+          </div>
+          {recipe.ingredients.map((ing, i) => {
+            const text = imperial ? toImperial(ing) : ing
+            return (
+              <div key={i} onClick={() => toggleCheck(i)}
+                role="checkbox" tabIndex={0} aria-checked={!!checked[i]}
+                onKeyDown={e => (e.key === ' ' || e.key === 'Enter') && toggleCheck(i)}
+                style={{
+                display: 'flex', gap: 12, alignItems: 'flex-start',
+                padding: '8px 0', borderBottom: '1px solid #1e1e1e', cursor: 'pointer',
+                textDecoration: checked[i] ? 'line-through' : 'none',
+                color: checked[i] ? '#555' : 'inherit',
+              }}>
+                <span style={{
+                  width: 20, height: 20, borderRadius: 4, border: '2px solid',
+                  borderColor: checked[i] ? '#7c6af7' : '#444',
+                  background: checked[i] ? '#7c6af7' : 'transparent',
+                  flexShrink: 0, marginTop: 2,
+                }} />
+                {text}
+              </div>
+            )
+          })}
         </section>
       )}
 

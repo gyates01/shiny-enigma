@@ -30,36 +30,54 @@ function RecipeCard({ recipe, onClick }) {
       }}
     >
       {recipe.image_url ? (
-        <div style={{ position: 'relative', height: 140, overflow: 'hidden' }}>
+        <div style={{ position: 'relative', height: 162, overflow: 'hidden' }}>
           <img src={recipe.image_url} alt=""
             style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
           <div style={{
             position: 'absolute', bottom: 0, left: 0, right: 0, height: 60,
             background: 'linear-gradient(to top, rgba(26,26,26,0.95), transparent)',
           }} />
+          {cuisines.length > 0 && (
+            <div style={{ position: 'absolute', top: 10, left: 10, display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+              {cuisines.map(t => (
+                <span key={t} style={{
+                  background: 'rgba(20,10,40,0.72)', backdropFilter: 'blur(6px)',
+                  color: '#c4b8ff', border: '1px solid rgba(124,106,247,0.35)',
+                  borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600,
+                }}>{t}</span>
+              ))}
+            </div>
+          )}
         </div>
       ) : (
         <div style={{
-          height: 60, background: 'linear-gradient(135deg, #1e1a3a 0%, #12121f 100%)',
+          position: 'relative', height: 75,
+          background: 'linear-gradient(135deg, #1e1a3a 0%, #12121f 100%)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 24,
-        }}>🍽️</div>
+        }}>
+          🍽️
+          {cuisines.length > 0 && (
+            <div style={{ position: 'absolute', top: 8, left: 10, display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+              {cuisines.map(t => (
+                <span key={t} style={{
+                  background: 'rgba(20,10,40,0.72)', backdropFilter: 'blur(6px)',
+                  color: '#c4b8ff', border: '1px solid rgba(124,106,247,0.35)',
+                  borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600,
+                }}>{t}</span>
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
-      <div style={{ padding: '10px 12px 12px', flex: 1, display: 'flex', flexDirection: 'column', gap: 7 }}>
+      <div style={{ padding: '12px 14px 14px', flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ fontWeight: 700, fontSize: 16, lineHeight: 1.3, color: 'var(--text)' }}>
           {recipe.title}
         </div>
 
-        {(cuisines.length > 0 || categories.length > 0) && (
+        {categories.length > 0 && (
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {cuisines.map(t => (
-              <span key={t} style={{
-                background: 'rgba(124,106,247,0.12)', color: '#a89cf7',
-                border: '1px solid rgba(124,106,247,0.25)',
-                borderRadius: 20, padding: '2px 10px', fontSize: 12, fontWeight: 500,
-              }}>{t}</span>
-            ))}
             {categories.map(t => (
               <span key={t} style={{
                 background: 'rgba(20,184,166,0.12)', color: '#2dd4bf',
@@ -127,12 +145,12 @@ export default function RecipeList() {
 
   const filterStyle = {
     background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)',
-    borderRadius: 10, padding: '7px 11px', fontSize: 13, cursor: 'pointer', flex: '1 1 130px',
+    borderRadius: 10, padding: '9px 13px', fontSize: 14, cursor: 'pointer', flex: '1 1 130px',
   }
 
   return (
     <div className="page" style={{ maxWidth: 1100 }}>
-      <h1 style={{ fontSize: 22, fontWeight: 800, marginBottom: 14, letterSpacing: '-0.5px' }}>
+      <h1 style={{ fontSize: 26, fontWeight: 800, marginBottom: 17, letterSpacing: '-0.5px' }}>
         My Recipes
         {!loading && recipes.length > 0 && (
           <span style={{ fontSize: 15, fontWeight: 400, color: 'var(--text-dim)', marginLeft: 12 }}>
@@ -146,10 +164,10 @@ export default function RecipeList() {
         placeholder="🔍  Search by name, ingredient, cuisine..."
         value={query}
         onChange={e => setQuery(e.target.value)}
-        style={{ marginBottom: 10, fontSize: 13, padding: '9px 13px' }}
+        style={{ marginBottom: 12, fontSize: 14, padding: '11px 14px' }}
       />
 
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20, alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 22, alignItems: 'center' }}>
         <select value={filters.cuisine} onChange={e => setFilter('cuisine', e.target.value)} style={filterStyle}>
           <option value="">All cuisines</option>
           {cuisines.map(c => <option key={c} value={c}>{c}</option>)}
@@ -180,7 +198,7 @@ export default function RecipeList() {
           <p style={{ fontSize: 16 }}>{query || hasFilters ? 'No recipes match your filters.' : 'No recipes yet — add your first one!'}</p>
         </div>
       )}
-      <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))' }}>
+      <div style={{ display: 'grid', gap: 17, gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))' }}>
         {recipes.map(r => (
           <RecipeCard key={r.id} recipe={r} onClick={() => navigate(`/recipes/${r.id}`)} />
         ))}

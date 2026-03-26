@@ -18,27 +18,6 @@ _MAX_IMAGE_BYTES = 10 * 1024 * 1024  # 10 MB
 
 router = APIRouter()
 
-@router.get("/debug-container")
-def debug_container():
-    import os, sys
-    app_dir = Path("/app")
-    def ls(p):
-        try:
-            return [str(x.relative_to(p)) for x in Path(p).iterdir()]
-        except Exception as e:
-            return [f"ERROR: {e}"]
-    return {
-        "cwd": os.getcwd(),
-        "file": __file__,
-        "python": sys.executable,
-        "app_exists": app_dir.exists(),
-        "app_contents": ls("/app"),
-        "frontend_exists": (app_dir / "frontend").exists(),
-        "dist_exists": (app_dir / "frontend" / "dist").exists(),
-        "dist_contents": ls("/app/frontend/dist"),
-    }
-
-
 
 class AddRecipeRequest(BaseModel):
     url: str
