@@ -154,7 +154,7 @@ export default function RecipeList() {
         My Recipes
         {!loading && recipes.length > 0 && (
           <span style={{ fontSize: 15, fontWeight: 400, color: 'var(--text-dim)', marginLeft: 12 }}>
-            {recipes.length} {recipes.length === 1 ? 'recipe' : 'recipes'}
+            {recipes.length}
           </span>
         )}
       </h1>

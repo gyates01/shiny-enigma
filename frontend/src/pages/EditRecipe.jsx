@@ -16,7 +16,11 @@ export default function EditRecipe() {
       .then(r => setForm({
         title: r.title || '',
         description: r.description || '',
-        servings: (Array.isArray(r.servings) ? (r.servings[0] || '') : (r.servings || '')).replace(/\s*servings?\s*/i, '').trim(),
+        servings: (() => {
+          let s = Array.isArray(r.servings) ? (r.servings[0] || '') : (r.servings || '')
+          const m = s.match(/^\[['"]([^'"]+)/)
+          return (m ? m[1] : s).replace(/\s*servings?\s*/i, '').trim()
+        })(),
         prep_time: r.prep_time ?? '',
         cook_time: r.cook_time ?? '',
         total_time: r.total_time ?? '',
