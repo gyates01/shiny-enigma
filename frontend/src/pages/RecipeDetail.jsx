@@ -205,12 +205,19 @@ export default function RecipeDetail() {
       </div>
 
       {recipe.image_url && (
-        <img
-          src={recipe.image_url}
-          alt={recipe.title}
-          style={{ width: '100%', maxHeight: 750, objectFit: 'cover', borderRadius: 12, marginBottom: 16 }}
-        />
+        <div style={{
+          position: 'sticky', top: 56, zIndex: 0,
+          borderRadius: '12px 12px 0 0', overflow: 'hidden', marginTop: 8,
+        }}>
+          <img src={recipe.image_url} alt={recipe.title}
+            style={{ width: '100%', display: 'block' }} />
+        </div>
       )}
+
+      <div style={{
+        position: 'relative', zIndex: 1, background: 'var(--bg)',
+        ...(recipe.image_url ? { borderRadius: '20px 20px 0 0', marginTop: -28, paddingTop: 24 } : {}),
+      }}>
 
       <a href={recipe.source_url} target="_blank" rel="noreferrer"
          style={{ color: '#7c6af7', fontSize: 13, wordBreak: 'break-all' }}>
@@ -386,6 +393,7 @@ export default function RecipeDetail() {
         </section>
       )}
 
+      </div>
     </div>
   )
 }
