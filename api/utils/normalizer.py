@@ -111,6 +111,17 @@ CATEGORY_MAP: dict[str, str] = {
 }
 
 
+_QTY_CATEGORIES: frozenset[str] = frozenset({'Produce', 'Meat'})
+_EGG_RE = re.compile(r'\beggs?\b', re.IGNORECASE)
+
+
+def detect_stock_mode(category: str, name: str) -> str:
+    """Return 'qty' for Produce, Meat, and egg items; 'level' for everything else."""
+    if _EGG_RE.search(name):
+        return 'qty'
+    return 'qty' if category in _QTY_CATEGORIES else 'level'
+
+
 def detect_category(name: str) -> str:
     """Auto-detect pantry category from item name. Falls back to 'Other'."""
     lower = name.lower()

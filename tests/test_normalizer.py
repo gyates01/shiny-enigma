@@ -1,4 +1,4 @@
-from api.utils.normalizer import normalize_ingredient, detect_category, is_on_hand
+from api.utils.normalizer import normalize_ingredient, detect_category, is_on_hand, detect_stock_mode
 
 
 # --- normalize_ingredient ---
@@ -105,3 +105,37 @@ def test_butter_matches_peanut_butter():
 def test_rice_does_not_match_rice_flour_pantry_item():
     # Existing direction test: "rice flour" in pantry must NOT match ingredient "rice"
     assert is_on_hand("rice", ["rice flour"]) is False
+
+
+# --- detect_stock_mode ---
+
+def test_produce_gets_qty_mode():
+    assert detect_stock_mode("Produce", "apple") == "qty"
+
+
+def test_meat_gets_qty_mode():
+    assert detect_stock_mode("Meat", "chicken") == "qty"
+
+
+def test_dairy_gets_level_mode():
+    assert detect_stock_mode("Dairy", "butter") == "level"
+
+
+def test_pantry_gets_level_mode():
+    assert detect_stock_mode("Pantry", "flour") == "level"
+
+
+def test_spices_gets_level_mode():
+    assert detect_stock_mode("Spices", "cumin") == "level"
+
+
+def test_other_gets_level_mode():
+    assert detect_stock_mode("Other", "xanthan gum") == "level"
+
+
+def test_egg_exception_gets_qty_despite_dairy():
+    assert detect_stock_mode("Dairy", "egg") == "qty"
+
+
+def test_eggs_exception_plural():
+    assert detect_stock_mode("Dairy", "eggs") == "qty"
