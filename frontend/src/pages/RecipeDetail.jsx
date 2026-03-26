@@ -2,6 +2,56 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 
+// Mirrors api/utils/normalizer.py — strips quantities/units/prep from ingredient strings
+function normalizeIngredient(text) {
+  let s = text.toLowerCase();
+  s = s.replace(/\s*,.*$|\s*\(.*?\)|\s*;.*$/g, '');
+  s = s.replace(/^\s*(?:a\s+(?:pinch|dash|handful)\s+of\s+)?(?:\d[\d\s/.\-]*\s*)?/, '');
+  s = s.replace(/^(?:cups?|tablespoons?|tbsps?|teaspoons?|tsps?|pounds?|lbs?|ounces?|oz|grams?|g\b|kg|cloves?|stalks?|heads?|bags?|cans?|pieces?|sprigs?|pinch(?:es)?|dashes?)\s+/i, '');
+  s = s.replace(/\b(?:fresh|freshly|dried|large|small|medium|extra|virgin|fine|ground|whole|raw|divided|ripe|firm|cooked|chopped|sliced|diced)\b\s*/gi, '');
+  s = s.replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
+  return s;
+}
+
+function AddMissingButton({ missingIngredients }) {
+  const [status, setStatus] = useState('');
+
+  async function handleClick() {
+    setStatus('Adding...');
+    let added = 0;
+    for (const text of missingIngredients) {
+      const name = normalizeIngredient(text);
+      if (!name) continue;
+      const res = await fetch('/api/pantry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      }).catch(() => null);
+      if (res && res.status === 201) added++;
+      // 409 = already in pantry, silently skip
+    }
+    setStatus(added > 0 ? `Added ${added} item${added !== 1 ? 's' : ''} to pantry` : 'All already in pantry');
+    setTimeout(() => setStatus(''), 3000);
+  }
+
+  return (
+    <div style={{ marginTop: 8 }}>
+      <button
+        onClick={handleClick}
+        disabled={status === 'Adding...'}
+        style={{
+          background: '#1f2937', color: '#9ca3af', border: '1px solid #374151',
+          borderRadius: 8, padding: '8px 14px', fontSize: 13, cursor: 'pointer',
+          opacity: status === 'Adding...' ? 0.6 : 1,
+        }}
+      >
+        Add missing to pantry
+      </button>
+      {status && <span style={{ marginLeft: 10, fontSize: 12, color: '#6ee7b7' }}>{status}</span>}
+    </div>
+  );
+}
+
 function fmtTime(mins) {
   if (!mins) return null
   const h = Math.floor(mins / 60), m = mins % 60
@@ -81,11 +131,16 @@ export default function RecipeDetail() {
   const [imperial, setImperial] = useState(false)
   const [error, setError] = useState('')
   const [deleting, setDeleting] = useState(false)
+  const [pantryEmpty, setPantryEmpty] = useState(true)
 
   useEffect(() => {
     api.getRecipe(id)
       .then(setRecipe)
       .catch(e => setError(e.message))
+    fetch('/api/pantry')
+      .then(r => r.json())
+      .then(items => setPantryEmpty(items.length === 0))
+      .catch(() => {})
   }, [id])
 
   const toggleCheck = (i) => setChecked(prev => ({ ...prev, [i]: !prev[i] }))
@@ -163,7 +218,7 @@ export default function RecipeDetail() {
         <section style={{ marginBottom: 28 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
             <h2 style={{ fontSize: 16, fontWeight: 600 }}>Ingredients</h2>
-            {hasMetricUnits(recipe.ingredients) && (
+            {hasMetricUnits(recipe.ingredients.map(i => i.text)) && (
               <button
                 onClick={() => setImperial(v => !v)}
                 style={{
@@ -178,28 +233,53 @@ export default function RecipeDetail() {
               </button>
             )}
           </div>
-          {recipe.ingredients.map((ing, i) => {
-            const text = imperial ? toImperial(ing) : ing
-            return (
-              <div key={i} onClick={() => toggleCheck(i)}
-                role="checkbox" tabIndex={0} aria-checked={!!checked[i]}
-                onKeyDown={e => (e.key === ' ' || e.key === 'Enter') && toggleCheck(i)}
-                style={{
-                display: 'flex', gap: 12, alignItems: 'flex-start',
-                padding: '8px 0', borderBottom: '1px solid #1e1e1e', cursor: 'pointer',
-                textDecoration: checked[i] ? 'line-through' : 'none',
-                color: checked[i] ? '#555' : 'inherit',
-              }}>
-                <span style={{
-                  width: 20, height: 20, borderRadius: 4, border: '2px solid',
-                  borderColor: checked[i] ? '#7c6af7' : '#444',
-                  background: checked[i] ? '#7c6af7' : 'transparent',
-                  flexShrink: 0, marginTop: 2,
-                }} />
-                {text}
+
+          {/* Pantry prompt — only when pantry is truly empty */}
+          {pantryEmpty && recipe.ingredients.length > 0 && (
+            <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 8 }}>
+              Add items to your pantry to see what you have on hand.
+            </p>
+          )}
+
+          {/* On hand section */}
+          {recipe.ingredients.some(i => i.on_hand) && (
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 6 }}>On hand</div>
+              {recipe.ingredients.filter(i => i.on_hand).map((ing, idx) => (
+                <div key={idx} style={{
+                  padding: '8px 12px', background: '#1f2937',
+                  borderLeft: '3px solid #22c55e', borderRadius: 8, marginBottom: 3,
+                  color: '#f3f4f6', fontSize: 14,
+                }}>
+                  {imperial ? toImperial(ing.text) : ing.text}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Still need section */}
+          {recipe.ingredients.some(i => !i.on_hand) && (
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 6 }}>
+                {recipe.ingredients.some(i => i.on_hand) ? 'Still need' : 'Ingredients'}
               </div>
-            )
-          })}
+              {recipe.ingredients.filter(i => !i.on_hand).map((ing, idx) => (
+                <div key={idx} style={{
+                  padding: '8px 12px', background: '#1f2937',
+                  borderLeft: recipe.ingredients.some(i => i.on_hand) ? '3px solid #ef4444' : '3px solid #374151',
+                  borderRadius: 8, marginBottom: 3,
+                  color: '#f3f4f6', fontSize: 14,
+                }}>
+                  {imperial ? toImperial(ing.text) : ing.text}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Add missing to pantry */}
+          {recipe.ingredients.some(i => !i.on_hand) && (
+            <AddMissingButton missingIngredients={recipe.ingredients.filter(i => !i.on_hand).map(i => i.text)} />
+          )}
         </section>
       )}
 

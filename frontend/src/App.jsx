@@ -5,6 +5,7 @@ import RecipeDetail from './pages/RecipeDetail'
 import AddRecipe from './pages/AddRecipe'
 import EditRecipe from './pages/EditRecipe'
 import Stats from './pages/Stats'
+import Pantry from './pages/Pantry'
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
         <Route path="/recipes/:id" element={<RecipeDetail />} />
         <Route path="/recipes/:id/edit" element={<EditRecipe />} />
         <Route path="/add" element={<AddRecipe />} />
+        <Route path="/pantry" element={<Pantry />} />
         <Route path="/stats" element={<Stats />} />
       </Routes>
     </>
