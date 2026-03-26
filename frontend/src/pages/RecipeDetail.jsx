@@ -169,6 +169,8 @@ export default function RecipeDetail() {
   if (error) return <div className="page"><p className="error">{error}</p></div>
   if (!recipe) return <div className="page"><p className="dim">Loading...</p></div>
 
+  const hasOnHand = recipe.ingredients?.some(i => i.on_hand) ?? false
+
   const meta = [
     recipe.cuisine && `Cuisine: ${recipe.cuisine}`,
     recipe.category && `Category: ${recipe.category}`,
@@ -206,7 +208,7 @@ export default function RecipeDetail() {
 
       {recipe.image_url && (
         <div style={{
-          position: 'sticky', top: 56, zIndex: 0,
+          position: 'sticky', top: 'var(--nav-height-top)', zIndex: 0,
           borderRadius: '12px 12px 0 0', overflow: 'hidden', marginTop: 8,
         }}>
           <img src={recipe.image_url} alt={recipe.title}
@@ -301,7 +303,7 @@ export default function RecipeDetail() {
                 </p>
               )}
 
-              {recipe.ingredients.some(i => i.on_hand) && (
+              {hasOnHand && (
                 <div style={{ marginBottom: 12 }}>
                   <div style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 6 }}>On hand</div>
                   {recipe.ingredients.map((ing, i) => !ing.on_hand ? null : (
@@ -337,7 +339,7 @@ export default function RecipeDetail() {
 
               {recipe.ingredients.some(i => !i.on_hand) && (
                 <div style={{ marginBottom: 12 }}>
-                  {recipe.ingredients.some(i => i.on_hand) && (
+                  {hasOnHand && (
                     <div style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 6 }}>Still need</div>
                   )}
                   {recipe.ingredients.map((ing, i) => ing.on_hand ? null : (
@@ -347,8 +349,8 @@ export default function RecipeDetail() {
                       style={{
                         display: 'flex', alignItems: 'center', gap: 10,
                         padding: '8px 0', borderBottom: '1px solid #1e1e1e',
-                        borderLeft: recipe.ingredients.some(j => j.on_hand) ? '3px solid #ef4444' : 'none',
-                        paddingLeft: recipe.ingredients.some(j => j.on_hand) ? 10 : 0,
+                        borderLeft: hasOnHand ? '3px solid #ef4444' : 'none',
+                        paddingLeft: hasOnHand ? 10 : 0,
                         cursor: 'pointer',
                       }}
                     >
