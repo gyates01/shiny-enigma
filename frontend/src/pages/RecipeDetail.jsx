@@ -54,6 +54,14 @@ function AddMissingButton({ missingIngredients }) {
   );
 }
 
+function cleanServings(s) {
+  if (!s) return null
+  // Strip Python list repr: "['4']" → "4", "['12', '12 cups']" → "12"
+  const listMatch = s.match(/^\[['"]([^'"]+)/)
+  if (listMatch) return listMatch[1]
+  return s
+}
+
 function fmtTime(mins) {
   if (!mins) return null
   const h = Math.floor(mins / 60), m = mins % 60
@@ -167,7 +175,7 @@ export default function RecipeDetail() {
   const meta = [
     recipe.cuisine && `Cuisine: ${recipe.cuisine}`,
     recipe.category && `Category: ${recipe.category}`,
-    recipe.servings && `Serves: ${recipe.servings}`,
+    cleanServings(recipe.servings) && `Serves: ${cleanServings(recipe.servings)}`,
     fmtTime(recipe.total_time) && `Time: ${fmtTime(recipe.total_time)}`,
   ].filter(Boolean)
 
@@ -187,10 +195,16 @@ export default function RecipeDetail() {
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, flex: 1 }}>{recipe.title}</h1>
-        <button onClick={() => navigate(`/recipes/${id}/edit`)} style={{
-          background: 'none', border: '1px solid #444', color: '#aaa', cursor: 'pointer',
-          borderRadius: 6, padding: '6px 14px', fontSize: 13, marginLeft: 16, flexShrink: 0,
-        }}>Edit</button>
+        <div style={{ display: 'flex', gap: 8, marginLeft: 16, flexShrink: 0 }}>
+          <button onClick={() => navigate(`/recipes/${id}/edit`)} style={{
+            background: 'none', border: '1px solid #444', color: '#aaa', cursor: 'pointer',
+            borderRadius: 6, padding: '6px 14px', fontSize: 13,
+          }}>Edit</button>
+          <button onClick={handleDelete} disabled={deleting} style={{
+            background: 'none', border: '1px solid #7f1d1d', color: '#f87171', cursor: 'pointer',
+            borderRadius: 6, padding: '6px 14px', fontSize: 13, opacity: deleting ? 0.5 : 1,
+          }}>{deleting ? '...' : 'Delete'}</button>
+        </div>
       </div>
 
       {recipe.image_url && (
@@ -375,9 +389,6 @@ export default function RecipeDetail() {
         </section>
       )}
 
-      <button className="btn btn-danger" onClick={handleDelete} disabled={deleting}>
-        {deleting ? 'Deleting...' : 'Delete Recipe'}
-      </button>
     </div>
   )
 }

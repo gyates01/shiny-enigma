@@ -23,7 +23,7 @@ export default function EditRecipe() {
         cuisine: r.cuisine || '',
         category: r.category || '',
         tags: (r.tags || []).join(', '),
-        ingredients: (r.ingredients || []).join('\n'),
+        ingredients: (r.ingredients || []).map(i => typeof i === 'string' ? i : i.text).join('\n'),
         instructions: (r.instructions || []).join('\n'),
         calories: r.calories ?? '',
         protein_g: r.protein_g ?? '',
