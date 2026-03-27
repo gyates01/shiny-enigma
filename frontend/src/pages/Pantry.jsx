@@ -34,12 +34,14 @@ function StockControl({ item, onUpdate }) {
 
   function handleQtyBlur() {
     const val = localQty.trim();
-    onUpdate(item.id, { stock_value: val || null });
+    const num = parseFloat(val);
+    onUpdate(item.id, { stock_value: Number.isFinite(num) ? val : null });
   }
 
   function handleFrozenBlur() {
     const val = localFrozen.trim();
-    onUpdate(item.id, { backup_value: val || null });
+    const num = parseFloat(val);
+    onUpdate(item.id, { backup_value: Number.isFinite(num) ? val : null });
   }
 
   function cycleBackup() {
