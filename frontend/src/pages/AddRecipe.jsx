@@ -7,6 +7,7 @@ export default function AddRecipe() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(null)
+  const [duplicate, setDuplicate] = useState(null)
   const navigate = useNavigate()
 
   const handleAdd = async () => {
@@ -14,12 +15,14 @@ export default function AddRecipe() {
     setLoading(true)
     setError('')
     setSaved(null)
+    setDuplicate(null)
     try {
       const recipe = await api.addRecipe(url.trim())
       setSaved(recipe)
       setUrl('')
     } catch (e) {
-      setError(e.message)
+      if (e.existing) setDuplicate(e.existing)
+      else setError(e.message)
     } finally {
       setLoading(false)
     }
@@ -58,6 +61,21 @@ export default function AddRecipe() {
       )}
 
       {error && <p className="error" style={{ marginTop: 12 }}>{error}</p>}
+
+      {duplicate && (
+        <div style={{
+          marginTop: 20, padding: 16,
+          background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)',
+          borderRadius: 10,
+        }}>
+          <p style={{ color: '#f5a623', fontWeight: 600, marginBottom: 10 }}>
+            ⚠ Already in your collection: {duplicate.title}
+          </p>
+          <button className="btn btn-primary" onClick={() => navigate(`/recipes/${duplicate.id}`)}>
+            View Recipe
+          </button>
+        </div>
+      )}
 
       {saved && (
         <div style={{

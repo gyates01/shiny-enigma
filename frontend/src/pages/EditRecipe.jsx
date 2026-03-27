@@ -16,14 +16,18 @@ export default function EditRecipe() {
       .then(r => setForm({
         title: r.title || '',
         description: r.description || '',
-        servings: r.servings || '',
+        servings: (() => {
+          let s = Array.isArray(r.servings) ? (r.servings[0] || '') : (r.servings || '')
+          const m = s.match(/^\[['"]([^'"]+)/)
+          return (m ? m[1] : s).replace(/\s*servings?\s*/i, '').trim()
+        })(),
         prep_time: r.prep_time ?? '',
         cook_time: r.cook_time ?? '',
         total_time: r.total_time ?? '',
         cuisine: r.cuisine || '',
         category: r.category || '',
         tags: (r.tags || []).join(', '),
-        ingredients: (r.ingredients || []).join('\n'),
+        ingredients: (r.ingredients || []).map(i => typeof i === 'string' ? i : i.text).join('\n'),
         instructions: (r.instructions || []).join('\n'),
         calories: r.calories ?? '',
         protein_g: r.protein_g ?? '',
@@ -89,80 +93,102 @@ export default function EditRecipe() {
   if (!form) return <div className="page"><p className="dim">Loading...</p></div>
 
   const label = (text) => (
-    <label style={{ display: 'block', color: '#888', fontSize: 13, marginBottom: 6 }}>
+    <label style={{ display: 'block', color: 'var(--text-dim)', fontSize: 13, marginBottom: 6, fontWeight: 500 }}>
       {text}
     </label>
   )
-  const field = { marginBottom: 16 }
+  const field = { marginBottom: 20 }
+  const section = {
+    background: 'var(--surface)', border: '1px solid var(--border)',
+    borderRadius: 12, padding: 20, marginBottom: 20,
+  }
 
   return (
     <div className="page">
       <button onClick={() => navigate(`/recipes/${id}`)} style={{
-        background: 'none', border: 'none', color: '#888', cursor: 'pointer',
+        background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer',
         marginBottom: 16, fontSize: 14,
-      }}>← Cancel</button>
+      }}>← Back</button>
 
       <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 24 }}>Edit Recipe</h1>
 
       {error && <p className="error" style={{ marginBottom: 16 }}>{error}</p>}
 
       <form onSubmit={handleSave}>
-        <div style={field}>{label('Title')}
-          <input value={form.title} onChange={e => set('title', e.target.value)} required />
-        </div>
-        <div style={field}>{label('Description')}
-          <textarea value={form.description} onChange={e => set('description', e.target.value)} rows={3} />
-        </div>
-        <div style={field}>{label('Servings')}
-          <input value={form.servings} onChange={e => set('servings', e.target.value)} />
+
+        {/* Basic info */}
+        <div style={section}>
+          <div style={field}>{label('Title')}
+            <input value={form.title} onChange={e => set('title', e.target.value)} required />
+          </div>
+          <div style={field}>{label('Description')}
+            <textarea value={form.description} onChange={e => set('description', e.target.value)} rows={3} />
+          </div>
+          <div style={{ ...field, marginBottom: 0 }}>{label('Servings')}
+            <input value={form.servings} onChange={e => set('servings', e.target.value)} style={{ maxWidth: 160 }} />
+          </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
-          {[['prep_time', 'Prep (min)'], ['cook_time', 'Cook (min)'], ['total_time', 'Total (min)']].map(([k, lbl]) => (
-            <div key={k} style={{ flex: 1 }}>
-              {label(lbl)}
-              <input type="number" min="0" value={form[k]} onChange={e => set(k, e.target.value)} />
+        {/* Timing */}
+        <div style={section}>
+          <div style={{ display: 'flex', gap: 12 }}>
+            {[['prep_time', 'Prep (min)'], ['cook_time', 'Cook (min)'], ['total_time', 'Total (min)']].map(([k, lbl]) => (
+              <div key={k} style={{ flex: 1 }}>
+                {label(lbl)}
+                <input type="number" min="0" value={form[k]} onChange={e => set(k, e.target.value)} />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Classification */}
+        <div style={section}>
+          <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
+            <div style={{ flex: 1 }}>{label('Cuisine')}
+              <input value={form.cuisine} onChange={e => set('cuisine', e.target.value)} />
             </div>
-          ))}
-        </div>
-
-        <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
-          <div style={{ flex: 1 }}>{label('Cuisine')}
-            <input value={form.cuisine} onChange={e => set('cuisine', e.target.value)} />
+            <div style={{ flex: 1 }}>{label('Category')}
+              <input value={form.category} onChange={e => set('category', e.target.value)} />
+            </div>
           </div>
-          <div style={{ flex: 1 }}>{label('Category')}
-            <input value={form.category} onChange={e => set('category', e.target.value)} />
+          <div style={{ marginBottom: 0 }}>{label('Tags (comma-separated)')}
+            <input value={form.tags} onChange={e => set('tags', e.target.value)} />
           </div>
         </div>
-        <div style={field}>{label('Tags (comma-separated)')}
-          <input value={form.tags} onChange={e => set('tags', e.target.value)} />
-        </div>
 
-        <div style={field}>{label('Photo')}
+        {/* Photo */}
+        <div style={section}>
+          {label('Photo')}
           {form.image_url && (
             <img src={form.image_url} alt="Recipe preview"
-              style={{ width: 120, height: 120, objectFit: 'cover', borderRadius: 8,
-                       marginBottom: 8, display: 'block' }} />
+              style={{ width: 140, height: 140, objectFit: 'cover', borderRadius: 10,
+                       marginBottom: 12, display: 'block' }} />
           )}
           <input type="text" value={form.image_url} onChange={e => set('image_url', e.target.value)}
-            placeholder="Image URL" style={{ marginBottom: 8 }} />
-          <label style={{ color: '#7c6af7', fontSize: 14, cursor: 'pointer' }}>
+            placeholder="Paste an image URL" style={{ marginBottom: 10 }} />
+          <label style={{ color: 'var(--accent)', fontSize: 14, cursor: 'pointer', display: 'inline-block' }}>
             {uploading ? 'Uploading...' : '↑ Upload from device'}
             <input type="file" accept="image/*" onChange={handleImageUpload}
               style={{ display: 'none' }} disabled={uploading} />
           </label>
-          {imageError && <p className="error" style={{ marginTop: 4, fontSize: 13 }}>{imageError}</p>}
+          {imageError && <p className="error" style={{ marginTop: 6, fontSize: 13 }}>{imageError}</p>}
         </div>
 
-        <div style={field}>{label('Ingredients (one per line)')}
-          <textarea value={form.ingredients} onChange={e => set('ingredients', e.target.value)} rows={8} />
+        {/* Ingredients */}
+        <div style={section}>
+          {label('Ingredients (one per line)')}
+          <textarea value={form.ingredients} onChange={e => set('ingredients', e.target.value)} rows={8} style={{ marginBottom: 0 }} />
         </div>
 
-        <div style={field}>{label('Instructions (one step per line)')}
-          <textarea value={form.instructions} onChange={e => set('instructions', e.target.value)} rows={10} />
+        {/* Instructions */}
+        <div style={section}>
+          {label('Instructions (one step per line)')}
+          <textarea value={form.instructions} onChange={e => set('instructions', e.target.value)} rows={10} style={{ marginBottom: 0 }} />
         </div>
 
-        <div style={field}>{label('Nutrition')}
+        {/* Nutrition */}
+        <div style={section}>
+          {label('Nutrition')}
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             {[['calories','Calories'],['protein_g','Protein (g)'],['carbs_g','Carbs (g)'],
               ['fat_g','Fat (g)'],['fiber_g','Fiber (g)']].map(([k, lbl]) => (
@@ -175,13 +201,13 @@ export default function EditRecipe() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-          <button type="submit" className="btn" disabled={saving}>
+        <div style={{ display: 'flex', gap: 12, marginTop: 4 }}>
+          <button type="submit" className="btn btn-primary" disabled={saving}>
             {saving ? 'Saving...' : 'Save'}
           </button>
           <button type="button" onClick={() => navigate(`/recipes/${id}`)}
-            style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer' }}>
-            Cancel
+            style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: 14 }}>
+            Back
           </button>
         </div>
       </form>

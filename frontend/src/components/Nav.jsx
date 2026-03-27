@@ -12,7 +12,7 @@ const links = [
 const navStyle = {
   position: 'fixed', left: 0, right: 0, zIndex: 100,
   background: '#111',
-  display: 'flex', alignItems: 'center', gap: 4,
+  alignItems: 'center', gap: 4,
 }
 
 const activeStyle = { color: '#7c6af7', fontWeight: 700 }
