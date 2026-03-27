@@ -104,6 +104,7 @@ CATEGORY_MAP: dict[str, str] = {
     "turmeric": "Spices", "cinnamon": "Spices", "oregano": "Spices",
     "cayenne": "Spices", "coriander": "Spices", "cardamom": "Spices",
     "clove": "Spices", "nutmeg": "Spices", "allspice": "Spices",
+    "salt": "Spices",
     # Pantry (longer keys first to avoid early substring matches)
     "olive oil": "Pantry", "sesame oil": "Pantry", "vegetable oil": "Pantry",
     "canola oil": "Pantry", "coconut oil": "Pantry",
@@ -112,7 +113,7 @@ CATEGORY_MAP: dict[str, str] = {
     "baking powder": "Pantry", "baking soda": "Pantry",
     "maple syrup": "Pantry", "apple cider vinegar": "Pantry",
     "coconut milk": "Pantry", "breadcrumb": "Pantry",
-    "flour": "Pantry", "sugar": "Pantry", "salt": "Pantry", "oil": "Pantry",
+    "flour": "Pantry", "sugar": "Pantry", "oil": "Pantry",
     "vinegar": "Pantry", "pasta": "Pantry", "rice": "Pantry", "bread": "Pantry",
     "stock": "Pantry", "broth": "Pantry", "honey": "Pantry", "vanilla": "Pantry",
     "cocoa": "Pantry", "chocolate": "Pantry", "oat": "Pantry",

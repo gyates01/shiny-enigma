@@ -34,6 +34,10 @@ def init_pantry_table(db_path: Path = DB_PATH) -> None:
             conn.execute("ALTER TABLE pantry_items ADD COLUMN stock_value TEXT")
         if not _column_exists(conn, 'pantry_items', 'backup_value'):
             conn.execute("ALTER TABLE pantry_items ADD COLUMN backup_value TEXT")
+        # Recategorise salt from Pantry → Spices
+        conn.execute(
+            "UPDATE pantry_items SET category = 'Spices' WHERE name = 'salt' AND category = 'Pantry'"
+        )
 
 
 def add_item(
