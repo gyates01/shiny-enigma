@@ -155,3 +155,39 @@ def test_egg_exception_gets_qty_despite_dairy():
 
 def test_eggs_exception_plural():
     assert detect_stock_mode("Dairy", "eggs") == "qty"
+
+
+# --- find_pantry_match ---
+
+from api.utils.normalizer import find_pantry_match
+
+
+def test_find_pantry_match_returns_matching_item():
+    items = [
+        {"name": "garlic", "stock_mode": "qty", "stock_value": "3", "backup_value": None},
+        {"name": "flour",  "stock_mode": "level", "stock_value": "full", "backup_value": "1"},
+    ]
+    result = find_pantry_match("3 cloves garlic, minced", items)
+    assert result is not None
+    assert result["name"] == "garlic"
+
+
+def test_find_pantry_match_returns_none_when_not_found():
+    items = [{"name": "garlic", "stock_mode": "qty", "stock_value": None, "backup_value": None}]
+    assert find_pantry_match("1 cup flour", items) is None
+
+
+def test_find_pantry_match_uses_word_boundary():
+    items = [{"name": "egg", "stock_mode": "qty", "stock_value": "6", "backup_value": None}]
+    assert find_pantry_match("1 eggplant", items) is None
+
+
+def test_find_pantry_match_returns_full_item_dict():
+    items = [{"name": "soy sauce", "stock_mode": "level", "stock_value": "low", "backup_value": "2"}]
+    result = find_pantry_match("3 tbsp soy sauce", items)
+    assert result["backup_value"] == "2"
+    assert result["stock_value"] == "low"
+
+
+def test_find_pantry_match_empty_pantry():
+    assert find_pantry_match("garlic", []) is None

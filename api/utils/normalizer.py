@@ -54,6 +54,19 @@ def is_on_hand(ingredient: str, pantry_names: list[str]) -> bool:
     )
 
 
+def find_pantry_match(ing_text: str, pantry_items: list[dict]) -> dict | None:
+    """Return the first pantry item whose name matches ing_text (word-boundary), or None.
+
+    Uses the same word-boundary logic as is_on_hand. Returns the full item dict
+    so callers can access stock_mode, stock_value, backup_value, etc.
+    """
+    norm = normalize_ingredient(ing_text)
+    for item in pantry_items:
+        if re.search(r'\b' + re.escape(item['name'].lower()) + r'\b', norm):
+            return item
+    return None
+
+
 # Category detection lookup. More-specific keys come before general ones
 # so that e.g. "bell pepper" → Produce before "pepper" → Spices.
 CATEGORY_MAP: dict[str, str] = {
