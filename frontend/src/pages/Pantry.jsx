@@ -257,9 +257,10 @@ export default function Pantry() {
           value={initLevel ?? ''}
           onChange={e => setInitLevel(e.target.value || null)}
           style={{
+            width: 68, flexShrink: 0,
             background: '#1f2937', border: '1px solid #374151',
-            borderRadius: 8, padding: '8px 6px', color: '#9ca3af',
-            fontSize: 13, cursor: 'pointer', flexShrink: 0,
+            borderRadius: 8, padding: '8px 4px', color: '#9ca3af',
+            fontSize: 13, cursor: 'pointer',
           }}
         >
           <option value="">—</option>
