@@ -16,10 +16,15 @@ function StockControl({ item, onUpdate }) {
   const isQty = item.stock_mode === 'qty';
   const unit = item.category === 'Meat' ? 'lbs' : 'ea';
   const [localQty, setLocalQty] = useState(item.stock_value ?? '');
+  const [localFrozen, setLocalFrozen] = useState(item.backup_value ?? '');
 
   useEffect(() => {
     setLocalQty(item.stock_value ?? '');
   }, [item.stock_value]);
+
+  useEffect(() => {
+    setLocalFrozen(item.backup_value ?? '');
+  }, [item.backup_value]);
 
   function cycleLevel() {
     const idx = LEVEL_CYCLE.indexOf(item.stock_value);
@@ -32,21 +37,31 @@ function StockControl({ item, onUpdate }) {
     onUpdate(item.id, { stock_value: val || null });
   }
 
+  function handleFrozenBlur() {
+    const val = localFrozen.trim();
+    onUpdate(item.id, { backup_value: val || null });
+  }
+
+  function cycleBackup() {
+    const current = parseInt(item.backup_value ?? '0', 10) || 0;
+    const next = (current + 1) % 4; // 0,1,2,3 then wraps to 0
+    onUpdate(item.id, { backup_value: next === 0 ? null : String(next) });
+  }
+
   function toggleMode() {
     const newMode = isQty ? 'level' : 'qty';
-    onUpdate(item.id, { stock_mode: newMode, stock_value: null });
+    onUpdate(item.id, { stock_mode: newMode, stock_value: null, backup_value: null });
   }
 
   const ls = LEVEL_STYLE[item.stock_value] ?? LEVEL_UNSET;
+  const backupCount = parseInt(item.backup_value ?? '0', 10) || 0;
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
       {isQty ? (
         <>
           <input
-            type="number"
-            min="0"
-            step="0.5"
+            type="number" min="0" step="0.5"
             value={localQty}
             onChange={e => setLocalQty(e.target.value)}
             onBlur={handleQtyBlur}
@@ -57,18 +72,58 @@ function StockControl({ item, onUpdate }) {
             }}
           />
           <span style={{ fontSize: 11, color: '#6b7280' }}>{unit}</span>
+          <span style={{ fontSize: 11, color: '#4b5563' }}>|</span>
+          <span style={{ fontSize: 11, color: '#6b7280' }}>frz:</span>
+          <input
+            type="number" min="0" step="0.5"
+            value={localFrozen}
+            onChange={e => setLocalFrozen(e.target.value)}
+            onBlur={handleFrozenBlur}
+            placeholder="0"
+            style={{
+              width: 52, background: '#1f2937', border: '1px dashed #374151',
+              borderRadius: 6, padding: '2px 6px', color: '#6b7280',
+              fontSize: 12, textAlign: 'right',
+            }}
+          />
+          <span style={{ fontSize: 11, color: '#6b7280' }}>{unit}</span>
         </>
       ) : (
-        <button
-          onClick={cycleLevel}
-          style={{
-            background: ls.bg, color: ls.color, border: ls.border,
-            borderRadius: 99, padding: '2px 8px',
-            fontSize: 11, cursor: 'pointer', fontWeight: 500, lineHeight: 1.4,
-          }}
-        >
-          {ls.label}
-        </button>
+        <>
+          <button
+            onClick={cycleLevel}
+            style={{
+              background: ls.bg, color: ls.color, border: ls.border,
+              borderRadius: 99, padding: '2px 8px',
+              fontSize: 11, cursor: 'pointer', fontWeight: 500, lineHeight: 1.4,
+            }}
+          >
+            {ls.label}
+          </button>
+          {backupCount > 0 ? (
+            <button
+              onClick={cycleBackup}
+              title="Click to cycle backup count (wraps to 0)"
+              style={{
+                background: '#1f2937', border: '1px solid #374151', color: '#9ca3af',
+                borderRadius: 99, padding: '2px 8px', fontSize: 11, cursor: 'pointer',
+              }}
+            >
+              +{backupCount} backup
+            </button>
+          ) : (
+            <button
+              onClick={cycleBackup}
+              title="Add a backup unit"
+              style={{
+                background: 'none', border: 'none', color: '#374151',
+                fontSize: 16, cursor: 'pointer', padding: '0 2px', lineHeight: 1,
+              }}
+            >
+              ⊕
+            </button>
+          )}
+        </>
       )}
       <button
         onClick={toggleMode}
