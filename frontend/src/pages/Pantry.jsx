@@ -44,9 +44,11 @@ function StockControl({ item, onUpdate }) {
     onUpdate(item.id, { backup_value: Number.isFinite(num) ? val : null });
   }
 
-  function cycleBackup() {
+  function cycleBackup(e) {
+    if (e) e.preventDefault();
     const current = parseInt(item.backup_value ?? '0', 10) || 0;
-    const next = (current + 1) % 4; // 0,1,2,3 then wraps to 0
+    const delta = e?.type === 'contextmenu' ? -1 : 1;
+    const next = ((current + delta) % 4 + 4) % 4;
     onUpdate(item.id, { backup_value: next === 0 ? null : String(next) });
   }
 
@@ -105,7 +107,8 @@ function StockControl({ item, onUpdate }) {
           {backupCount > 0 ? (
             <button
               onClick={cycleBackup}
-              title="Click to cycle backup count (wraps to 0)"
+              onContextMenu={cycleBackup}
+              title="Left-click: add backup · Right-click: remove backup"
               style={{
                 background: '#1f2937', border: '1px solid #374151', color: '#9ca3af',
                 borderRadius: 99, padding: '2px 8px', fontSize: 11, cursor: 'pointer',
@@ -116,7 +119,8 @@ function StockControl({ item, onUpdate }) {
           ) : (
             <button
               onClick={cycleBackup}
-              title="Add a backup unit"
+              onContextMenu={cycleBackup}
+              title="Left-click: add backup · Right-click: remove backup"
               style={{
                 background: 'none', border: 'none', color: '#374151',
                 fontSize: 16, cursor: 'pointer', padding: '0 2px', lineHeight: 1,
