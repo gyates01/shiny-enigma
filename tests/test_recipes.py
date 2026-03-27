@@ -416,3 +416,44 @@ def test_api_list_includes_image_url(client, monkeypatch):
     assert r.status_code == 200
     assert "image_url" in r.json()[0]
     assert r.json()[0]["image_url"] == "https://img.example.com/photo.jpg"
+
+
+def test_get_recipe_ingredients_have_backup_fields(client, tmp_db):
+    from recipe_extractor.database import save_recipe
+    save_recipe({
+        "title": "Test", "source_url": "http://example.com/backup-test",
+        "ingredients": ["3 tbsp soy sauce"], "instructions": [],
+        "cuisine": "", "category": "",
+    }, db_path=tmp_db)
+    recipes = client.get("/api/recipes").json()
+    recipe_id = recipes[0]["id"]
+    r = client.get(f"/api/recipes/{recipe_id}")
+    assert r.status_code == 200
+    ing = r.json()["ingredients"][0]
+    assert "stock_mode" in ing
+    assert "stock_value" in ing
+    assert "backup_value" in ing
+    # No pantry items — all None
+    assert ing["stock_mode"] is None
+    assert ing["backup_value"] is None
+
+
+def test_get_recipe_on_hand_ingredient_shows_backup_value(client, tmp_db):
+    from recipe_extractor.database import save_recipe
+    save_recipe({
+        "title": "Test", "source_url": "http://example.com/backup-test2",
+        "ingredients": ["3 tbsp soy sauce"], "instructions": [],
+        "cuisine": "", "category": "",
+    }, db_path=tmp_db)
+    # Add soy sauce to pantry with a backup
+    add_r = client.post("/api/pantry", json={"name": "soy sauce"})
+    item_id = add_r.json()["id"]
+    client.patch(f"/api/pantry/{item_id}", json={"stock_value": "low", "backup_value": "1"})
+
+    recipes = client.get("/api/recipes").json()
+    recipe_id = recipes[0]["id"]
+    r = client.get(f"/api/recipes/{recipe_id}")
+    ing = r.json()["ingredients"][0]
+    assert ing["on_hand"] is True
+    assert ing["stock_value"] == "low"
+    assert ing["backup_value"] == "1"

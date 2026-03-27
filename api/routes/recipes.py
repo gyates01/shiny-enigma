@@ -12,13 +12,25 @@ from recipe_extractor.database import (
     filter_recipes, get_recipe, get_recipe_by_url, save_recipe, delete_recipe, update_recipe
 )
 from recipe_extractor.pantry import list_items
-from api.utils.normalizer import is_on_hand
+from api.utils.normalizer import is_on_hand, find_pantry_match
 
 _ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 _EXT_MAP = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "image/gif": ".gif"}
 _MAX_IMAGE_BYTES = 10 * 1024 * 1024  # 10 MB
 
 router = APIRouter()
+
+
+def _annotate_ingredient(ing_text: str, pantry_items: list[dict]) -> dict:
+    """Annotate a raw ingredient string with on_hand status and stock data."""
+    match = find_pantry_match(ing_text, pantry_items)
+    return {
+        "text": ing_text,
+        "on_hand": match is not None,
+        "stock_mode": match["stock_mode"] if match else None,
+        "stock_value": match["stock_value"] if match else None,
+        "backup_value": match["backup_value"] if match else None,
+    }
 
 
 class AddRecipeRequest(BaseModel):
@@ -92,9 +104,9 @@ def api_add_recipe(body: AddRecipeRequest, db: Path = Depends(get_db_path)):
         raise HTTPException(status_code=422, detail=str(exc))
     row_id = save_recipe(recipe, db_path=db)
     saved = get_recipe(row_id, db_path=db)
-    pantry_names = [item["name"] for item in list_items(db_path=db)]
+    pantry_items = list_items(db_path=db)
     saved["ingredients"] = [
-        {"text": ing, "on_hand": is_on_hand(ing, pantry_names)}
+        _annotate_ingredient(ing, pantry_items)
         for ing in saved["ingredients"]
     ]
     return JSONResponse(content=saved, status_code=201)
@@ -105,9 +117,9 @@ def api_get_recipe(recipe_id: int, db: Path = Depends(get_db_path)):
     recipe = get_recipe(recipe_id, db_path=db)
     if not recipe:
         raise HTTPException(status_code=404, detail="Recipe not found")
-    pantry_names = [item["name"] for item in list_items(db_path=db)]
+    pantry_items = list_items(db_path=db)
     recipe["ingredients"] = [
-        {"text": ing, "on_hand": is_on_hand(ing, pantry_names)}
+        _annotate_ingredient(ing, pantry_items)
         for ing in recipe["ingredients"]
     ]
     return recipe
@@ -126,9 +138,9 @@ def api_update_recipe(
         raise HTTPException(status_code=422, detail="No fields to update")
     update_recipe(recipe_id, fields, db_path=db)
     recipe = get_recipe(recipe_id, db_path=db)
-    pantry_names = [item["name"] for item in list_items(db_path=db)]
+    pantry_items = list_items(db_path=db)
     recipe["ingredients"] = [
-        {"text": ing, "on_hand": is_on_hand(ing, pantry_names)}
+        _annotate_ingredient(ing, pantry_items)
         for ing in recipe["ingredients"]
     ]
     return recipe
