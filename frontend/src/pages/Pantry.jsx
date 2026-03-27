@@ -260,7 +260,7 @@ export default function Pantry() {
             width: 34, flexShrink: 0,
             background: '#1f2937', border: '1px solid #374151',
             borderRadius: 8, padding: '8px 2px', color: '#9ca3af',
-            fontSize: 13, cursor: 'pointer',
+            fontSize: 13, cursor: 'pointer', textAlign: 'center',
           }}
         >
           <option value="">—</option>
