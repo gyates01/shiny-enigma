@@ -75,11 +75,6 @@ def delete_item(item_id: int, db_path: Path = DB_PATH) -> bool:
     return cur.rowcount > 0
 
 
-def update_note(item_id: int, note: Optional[str], db_path: Path = DB_PATH) -> Optional[dict]:
-    """Compatibility shim: delegates to update_item. Will be removed in Task 4."""
-    return update_item(item_id, {"note": note}, db_path)
-
-
 def update_item(
     item_id: int,
     fields: dict,

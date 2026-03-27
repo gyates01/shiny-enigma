@@ -1,6 +1,6 @@
 import sqlite3
 from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -19,7 +19,7 @@ class AddItemRequest(BaseModel):
 
 class PatchItemRequest(BaseModel):
     note: Optional[str] = None
-    stock_mode: Optional[str] = None
+    stock_mode: Optional[Literal['level', 'qty']] = None
     stock_value: Optional[str] = None
 
 
