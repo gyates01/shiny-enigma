@@ -435,6 +435,7 @@ def test_get_recipe_ingredients_have_backup_fields(client, tmp_db):
     assert "backup_value" in ing
     # No pantry items — all None
     assert ing["stock_mode"] is None
+    assert ing["stock_value"] is None
     assert ing["backup_value"] is None
 
 
