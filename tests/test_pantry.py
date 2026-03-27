@@ -115,3 +115,27 @@ def test_patch_empty_body_returns_422(client):
     item_id = add.json()["id"]
     r = client.patch(f"/api/pantry/{item_id}", json={})
     assert r.status_code == 422
+
+
+def test_add_item_returns_backup_value_field(client):
+    r = client.post("/api/pantry", json={"name": "soy sauce"})
+    assert r.status_code == 201
+    assert "backup_value" in r.json()
+    assert r.json()["backup_value"] is None
+
+
+def test_patch_backup_value(client):
+    add = client.post("/api/pantry", json={"name": "soy sauce"})
+    item_id = add.json()["id"]
+    r = client.patch(f"/api/pantry/{item_id}", json={"backup_value": "2"})
+    assert r.status_code == 200
+    assert r.json()["backup_value"] == "2"
+
+
+def test_patch_backup_value_clear(client):
+    add = client.post("/api/pantry", json={"name": "soy sauce"})
+    item_id = add.json()["id"]
+    client.patch(f"/api/pantry/{item_id}", json={"backup_value": "1"})
+    r = client.patch(f"/api/pantry/{item_id}", json={"backup_value": None})
+    assert r.status_code == 200
+    assert r.json()["backup_value"] is None

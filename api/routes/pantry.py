@@ -21,6 +21,7 @@ class PatchItemRequest(BaseModel):
     note: Optional[str] = None
     stock_mode: Optional[Literal['level', 'qty']] = None
     stock_value: Optional[str] = None
+    backup_value: Optional[str] = None
 
 
 @router.get("/pantry")
