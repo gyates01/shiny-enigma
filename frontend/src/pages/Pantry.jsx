@@ -157,6 +157,7 @@ function StockControl({ item, onUpdate }) {
 export default function Pantry() {
   const [items, setItems]         = useState([]);
   const [input, setInput]         = useState('');
+  const [initLevel, setInitLevel] = useState(null);
   const [search, setSearch]       = useState('');
   const [error, setError]         = useState('');
   const [makeableCount, setMakeableCount] = useState(0);
@@ -202,7 +203,11 @@ export default function Pantry() {
       setError('Something went wrong. Please try again.');
       return;
     }
-    const item = await res.json();
+    let item = await res.json();
+    if (initLevel !== null && item.stock_mode === 'level') {
+      item = { ...item, stock_value: initLevel };
+      patchPantryItem(item.id, { stock_value: initLevel }).catch(() => {});
+    }
     setItems(prev => [...prev, item].sort((a, b) =>
       a.category.localeCompare(b.category) || a.name.localeCompare(b.name)
     ));
@@ -248,6 +253,20 @@ export default function Pantry() {
             borderRadius: 8, padding: '8px 12px', color: '#f3f4f6', fontSize: 14,
           }}
         />
+        <select
+          value={initLevel ?? ''}
+          onChange={e => setInitLevel(e.target.value || null)}
+          style={{
+            background: '#1f2937', border: '1px solid #374151',
+            borderRadius: 8, padding: '8px 6px', color: '#9ca3af',
+            fontSize: 13, cursor: 'pointer', flexShrink: 0,
+          }}
+        >
+          <option value="">—</option>
+          <option value="full">Full</option>
+          <option value="med">Med</option>
+          <option value="low">Low</option>
+        </select>
         <button
           type="submit"
           style={{
