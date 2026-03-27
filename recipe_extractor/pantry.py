@@ -24,13 +24,16 @@ def init_pantry_table(db_path: Path = DB_PATH) -> None:
                 category    TEXT    NOT NULL DEFAULT 'Other',
                 added_at    TEXT    NOT NULL,
                 stock_mode  TEXT    DEFAULT 'level',
-                stock_value TEXT
+                stock_value TEXT,
+                backup_value TEXT
             )
         """)
         if not _column_exists(conn, 'pantry_items', 'stock_mode'):
             conn.execute("ALTER TABLE pantry_items ADD COLUMN stock_mode TEXT DEFAULT 'level'")
         if not _column_exists(conn, 'pantry_items', 'stock_value'):
             conn.execute("ALTER TABLE pantry_items ADD COLUMN stock_value TEXT")
+        if not _column_exists(conn, 'pantry_items', 'backup_value'):
+            conn.execute("ALTER TABLE pantry_items ADD COLUMN backup_value TEXT")
 
 
 def add_item(
@@ -52,7 +55,7 @@ def add_item(
         return {
             "id": cur.lastrowid, "name": name, "note": note,
             "category": category, "added_at": now,
-            "stock_mode": stock_mode, "stock_value": None,
+            "stock_mode": stock_mode, "stock_value": None, "backup_value": None,
         }
 
 
@@ -61,7 +64,7 @@ def list_items(db_path: Path = DB_PATH) -> list[dict]:
     init_pantry_table(db_path)
     with _connect(db_path) as conn:
         rows = conn.execute(
-            "SELECT id, name, note, category, added_at, stock_mode, stock_value "
+            "SELECT id, name, note, category, added_at, stock_mode, stock_value, backup_value "
             "FROM pantry_items ORDER BY category, name COLLATE NOCASE"
         ).fetchall()
     return [dict(r) for r in rows]
@@ -80,11 +83,11 @@ def update_item(
     fields: dict,
     db_path: Path = DB_PATH,
 ) -> Optional[dict]:
-    """Update allowed fields (note, stock_mode, stock_value) on a pantry item.
+    """Update allowed fields on a pantry item.
 
     Returns the updated item dict, or None if the item doesn't exist or fields is empty.
     """
-    allowed = {'note', 'stock_mode', 'stock_value'}
+    allowed = {'note', 'stock_mode', 'stock_value', 'backup_value'}
     valid = {k: v for k, v in fields.items() if k in allowed}
     if not valid:
         return None
@@ -98,7 +101,7 @@ def update_item(
         if cur.rowcount == 0:
             return None
         row = conn.execute(
-            "SELECT id, name, note, category, added_at, stock_mode, stock_value "
+            "SELECT id, name, note, category, added_at, stock_mode, stock_value, backup_value "
             "FROM pantry_items WHERE id = ?",
             (item_id,),
         ).fetchone()

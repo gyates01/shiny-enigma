@@ -115,3 +115,50 @@ def test_migration_adds_columns_to_existing_table(db):
         cols = [r["name"] for r in conn.execute("PRAGMA table_info(pantry_items)").fetchall()]
     assert "stock_mode" in cols
     assert "stock_value" in cols
+
+
+def test_add_item_returns_backup_value_none(db):
+    item = add_item("soy sauce", None, "Pantry", "level", db)
+    assert "backup_value" in item
+    assert item["backup_value"] is None
+
+
+def test_list_items_includes_backup_value(db):
+    add_item("soy sauce", None, "Pantry", "level", db)
+    items = list_items(db)
+    assert "backup_value" in items[0]
+    assert items[0]["backup_value"] is None
+
+
+def test_update_item_backup_value(db):
+    item = add_item("soy sauce", None, "Pantry", "level", db)
+    updated = update_item(item["id"], {"backup_value": "2"}, db)
+    assert updated["backup_value"] == "2"
+
+
+def test_update_item_backup_value_clear(db):
+    item = add_item("soy sauce", None, "Pantry", "level", db)
+    update_item(item["id"], {"backup_value": "1"}, db)
+    updated = update_item(item["id"], {"backup_value": None}, db)
+    assert updated["backup_value"] is None
+
+
+def test_migration_adds_backup_value_column(db):
+    """Simulate a DB that has stock_mode/stock_value but not backup_value."""
+    from recipe_extractor.database import _connect
+    with _connect(db) as conn:
+        conn.execute("""
+            CREATE TABLE pantry_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL UNIQUE,
+                note TEXT,
+                category TEXT NOT NULL DEFAULT 'Other',
+                added_at TEXT NOT NULL,
+                stock_mode TEXT DEFAULT 'level',
+                stock_value TEXT
+            )
+        """)
+    init_pantry_table(db)
+    with _connect(db) as conn:
+        cols = [r["name"] for r in conn.execute("PRAGMA table_info(pantry_items)").fetchall()]
+    assert "backup_value" in cols
