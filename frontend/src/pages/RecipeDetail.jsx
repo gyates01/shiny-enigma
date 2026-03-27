@@ -326,12 +326,24 @@ export default function RecipeDetail() {
                         {checked[i] && '✓'}
                       </span>
                       <span style={{
+                        flex: 1,
                         fontSize: 14,
                         color: checked[i] ? '#555' : '#f3f4f6',
                         textDecoration: checked[i] ? 'line-through' : 'none',
                       }}>
                         {imperial ? toImperial(ing.text) : ing.text}
                       </span>
+                      {ing.backup_value && ing.backup_value !== '0' && (
+                        <span style={{
+                          background: '#1f2937', border: '1px solid #374151', color: '#9ca3af',
+                          borderRadius: 8, padding: '1px 7px', fontSize: 11,
+                          whiteSpace: 'nowrap', flexShrink: 0,
+                        }}>
+                          {ing.stock_mode === 'qty'
+                            ? `${ing.backup_value} lbs frozen`
+                            : `+${ing.backup_value} backup`}
+                        </span>
+                      )}
                     </div>
                   ))}
                 </div>
