@@ -48,9 +48,14 @@ function StockControl({ item, onUpdate }) {
 
   function cycleBackup(e) {
     if (e) e.preventDefault();
-    const current = parseInt(item.backup_value ?? '0', 10) || 0;
+    const isSpice = item.category === 'Spices';
+    const step = isSpice ? 0.5 : 1;
+    const numSteps = isSpice ? 7 : 4; // spices: 0,0.5,1,...,3 | others: 0,1,2,3
+    const current = parseFloat(item.backup_value ?? '0') || 0;
+    const idx = Math.round(current / step);
     const delta = e?.type === 'contextmenu' ? -1 : 1;
-    const next = ((current + delta) % 4 + 4) % 4;
+    const nextIdx = ((idx + delta) % numSteps + numSteps) % numSteps;
+    const next = nextIdx * step;
     onUpdate(item.id, { backup_value: next === 0 ? null : String(next) });
   }
 
@@ -60,7 +65,7 @@ function StockControl({ item, onUpdate }) {
   }
 
   const ls = LEVEL_STYLE[item.stock_value] ?? LEVEL_UNSET;
-  const backupCount = parseInt(item.backup_value ?? '0', 10) || 0;
+  const backupCount = parseFloat(item.backup_value ?? '0') || 0;
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
