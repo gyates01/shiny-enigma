@@ -63,7 +63,7 @@ def find_pantry_match(ing_text: str, pantry_items: list[dict]) -> dict | None:
     norm = normalize_ingredient(ing_text)
     for item in pantry_items:
         if re.search(r'\b' + re.escape(item['name'].lower()) + r'\b', norm):
-            return item
+            return dict(item)
     return None
 
 

@@ -1,4 +1,4 @@
-from api.utils.normalizer import normalize_ingredient, detect_category, is_on_hand, detect_stock_mode
+from api.utils.normalizer import normalize_ingredient, detect_category, is_on_hand, detect_stock_mode, find_pantry_match
 
 
 # --- normalize_ingredient ---
@@ -158,8 +158,6 @@ def test_eggs_exception_plural():
 
 
 # --- find_pantry_match ---
-
-from api.utils.normalizer import find_pantry_match
 
 
 def test_find_pantry_match_returns_matching_item():
