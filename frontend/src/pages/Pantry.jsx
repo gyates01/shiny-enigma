@@ -26,9 +26,11 @@ function StockControl({ item, onUpdate }) {
     setLocalFrozen(item.backup_value ?? '');
   }, [item.backup_value]);
 
-  function cycleLevel() {
+  function cycleLevel(e) {
+    if (e) e.preventDefault();
     const idx = LEVEL_CYCLE.indexOf(item.stock_value);
-    const next = LEVEL_CYCLE[(idx + 1) % LEVEL_CYCLE.length];
+    const delta = e?.type === 'contextmenu' ? -1 : 1;
+    const next = LEVEL_CYCLE[((idx + delta) % LEVEL_CYCLE.length + LEVEL_CYCLE.length) % LEVEL_CYCLE.length];
     onUpdate(item.id, { stock_value: next });
   }
 
@@ -96,6 +98,8 @@ function StockControl({ item, onUpdate }) {
         <>
           <button
             onClick={cycleLevel}
+            onContextMenu={cycleLevel}
+            title="Left-click: next level · Right-click: previous level"
             style={{
               background: ls.bg, color: ls.color, border: ls.border,
               borderRadius: 99, padding: '2px 8px',
