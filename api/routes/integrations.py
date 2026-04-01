@@ -7,8 +7,6 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import RedirectResponse
 
 from recipe_extractor.database import get_setting, set_setting, delete_setting, get_recipe
-from recipe_extractor.pantry import list_items
-from api.utils.normalizer import find_pantry_match
 
 router = APIRouter()
 
@@ -95,19 +93,16 @@ async def send_shopping_list(recipe_id: int):
     if not recipe:
         raise HTTPException(status_code=404, detail="Recipe not found")
 
-    pantry = list_items()
-    missing = [
-        ing for ing in (recipe.get("ingredients") or [])
-        if not find_pantry_match(ing, pantry)
-    ]
-    if not missing:
-        return {"sent": 0, "message": "All ingredients are on hand"}
+    ingredients = recipe.get("ingredients") or []
+    if not ingredients:
+        return {"sent": 0}
 
     headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
 
     sent = 0
+    last_error = None
     async with httpx.AsyncClient() as client:
-        for ing in missing:
+        for ing in ingredients:
             resp = await client.post(
                 f"{_TODOIST_API}/tasks",
                 headers=headers,
@@ -115,5 +110,10 @@ async def send_shopping_list(recipe_id: int):
             )
             if resp.status_code == 200:
                 sent += 1
+            else:
+                last_error = f"Todoist {resp.status_code}: {resp.text[:200]}"
+
+    if sent == 0 and last_error:
+        raise HTTPException(status_code=502, detail=last_error)
 
     return {"sent": sent}
