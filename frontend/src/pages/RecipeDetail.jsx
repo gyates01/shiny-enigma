@@ -313,9 +313,8 @@ export default function RecipeDetail() {
     }
     setTodoistLoading(true)
     try {
-      const { sent, project_url } = await api.sendToTodoist(id)
+      const { sent } = await api.sendToTodoist(id)
       setTodoistMsg(sent > 0 ? `Sent ${sent} items to Todoist ✓` : 'All ingredients already on hand')
-      if (sent > 0 && project_url) window.open(project_url, '_blank')
     } catch (e) {
       setTodoistMsg(`Error: ${e.message}`)
     } finally {
