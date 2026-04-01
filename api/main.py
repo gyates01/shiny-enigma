@@ -8,8 +8,10 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from api.routes import recipes, stats, export, pantry, assistant, integrations
+from recipe_extractor.database import init_db
 
 app = FastAPI(title="Recipe Extractor API")
+init_db()  # ensure all tables exist before any request arrives
 
 app.add_middleware(
     CORSMiddleware,

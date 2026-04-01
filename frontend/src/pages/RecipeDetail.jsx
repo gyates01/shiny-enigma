@@ -91,6 +91,18 @@ const QUICK_PROMPTS = [
   { label: 'Make it vegan', q: 'How can I make this recipe fully vegan? List each swap needed.' },
 ]
 
+function TodoistPickCircle({ index, picked, onToggle }) {
+  return (
+    <span onClick={e => onToggle(index, e)} style={{
+      width: 16, height: 16, borderRadius: '50%', flexShrink: 0,
+      border: `2px solid ${picked ? '#f87171' : '#374151'}`,
+      background: picked ? '#f87171' : 'transparent',
+      cursor: 'pointer', display: 'flex', alignItems: 'center',
+      justifyContent: 'center', fontSize: 9, color: '#fff',
+    }}>{picked && '✓'}</span>
+  )
+}
+
 function RecipeAssistant({ recipeId, open, onClose }) {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
@@ -546,15 +558,7 @@ export default function RecipeDetail() {
                   }}>
                     {text}
                   </span>
-                  {todoistConnected && (
-                    <span onClick={e => toggleTodoistPick(i, e)} style={{
-                      width: 16, height: 16, borderRadius: '50%', flexShrink: 0,
-                      border: `2px solid ${todoistPicked.has(i) ? '#f87171' : '#374151'}`,
-                      background: todoistPicked.has(i) ? '#f87171' : 'transparent',
-                      cursor: 'pointer', display: 'flex', alignItems: 'center',
-                      justifyContent: 'center', fontSize: 9, color: '#fff',
-                    }}>{todoistPicked.has(i) ? '✓' : ''}</span>
-                  )}
+                  {todoistConnected && <TodoistPickCircle index={i} picked={todoistPicked.has(i)} onToggle={toggleTodoistPick} />}
                 </div>
               )
             })

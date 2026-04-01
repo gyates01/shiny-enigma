@@ -1,5 +1,6 @@
 """Todoist OAuth and shopping-list push integration."""
 
+import asyncio
 import os
 from typing import Optional
 
@@ -15,6 +16,10 @@ router = APIRouter()
 _TODOIST_AUTH_URL = "https://todoist.com/oauth/authorize"
 _TODOIST_TOKEN_URL = "https://todoist.com/oauth/access_token"
 _TODOIST_API = "https://api.todoist.com/api/v1"
+_TODOIST_REDIRECT_URI = os.environ.get(
+    "TODOIST_REDIRECT_URI",
+    "https://shiny-enigma-production-ee0c.up.railway.app/api/integrations/todoist/callback",
+)
 
 
 def _client_id() -> str:
@@ -33,15 +38,11 @@ def _client_secret() -> str:
 
 @router.get("/integrations/todoist/auth")
 async def todoist_auth():
-    redirect_uri = os.environ.get(
-        "TODOIST_REDIRECT_URI",
-        "https://shiny-enigma-production-ee0c.up.railway.app/api/integrations/todoist/callback",
-    )
     url = (
         f"{_TODOIST_AUTH_URL}"
         f"?client_id={_client_id()}"
         f"&scope=data:read_write"
-        f"&redirect_uri={redirect_uri}"
+        f"&redirect_uri={_TODOIST_REDIRECT_URI}"
     )
     return RedirectResponse(url)
 
@@ -50,17 +51,12 @@ async def todoist_auth():
 async def todoist_callback(code: str = "", error: str = ""):
     if error:
         return RedirectResponse("/recipes?todoist=denied")
-
-    redirect_uri = os.environ.get(
-        "TODOIST_REDIRECT_URI",
-        "https://shiny-enigma-production-ee0c.up.railway.app/api/integrations/todoist/callback",
-    )
     async with httpx.AsyncClient() as client:
         resp = await client.post(_TODOIST_TOKEN_URL, data={
             "client_id": _client_id(),
             "client_secret": _client_secret(),
             "code": code,
-            "redirect_uri": redirect_uri,
+            "redirect_uri": _TODOIST_REDIRECT_URI,
         })
     if resp.status_code != 200:
         raise HTTPException(status_code=502, detail="Token exchange failed")
@@ -90,12 +86,12 @@ class ShoppingListRequest(BaseModel):
 
 
 @router.post("/recipes/{recipe_id}/shopping-list")
-async def send_shopping_list(recipe_id: int, body: ShoppingListRequest = ShoppingListRequest()):
+async def send_shopping_list(recipe_id: int, body: Optional[ShoppingListRequest] = None):
     token = get_setting("todoist_token")
     if not token:
         raise HTTPException(status_code=401, detail="Todoist not connected")
 
-    if body.ingredients is not None:
+    if body is not None and body.ingredients is not None:
         ingredients = body.ingredients
     else:
         recipe = get_recipe(recipe_id)
@@ -107,21 +103,16 @@ async def send_shopping_list(recipe_id: int, body: ShoppingListRequest = Shoppin
 
     headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
 
-    sent = 0
-    last_error = None
     async with httpx.AsyncClient() as client:
-        for ing in ingredients:
-            resp = await client.post(
-                f"{_TODOIST_API}/tasks",
-                headers=headers,
-                json={"content": ing},
-            )
-            if resp.status_code == 200:
-                sent += 1
-            else:
-                last_error = f"Todoist {resp.status_code}: {resp.text[:200]}"
+        responses = await asyncio.gather(*[
+            client.post(f"{_TODOIST_API}/tasks", headers=headers, json={"content": ing})
+            for ing in ingredients
+        ])
 
-    if sent == 0 and last_error:
-        raise HTTPException(status_code=502, detail=last_error)
+    sent = sum(1 for r in responses if r.status_code == 200)
+    failures = [r for r in responses if r.status_code != 200]
+
+    if sent == 0 and failures:
+        raise HTTPException(status_code=502, detail=f"Todoist {failures[0].status_code}: {failures[0].text[:200]}")
 
     return {"sent": sent}
