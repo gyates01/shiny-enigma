@@ -105,24 +105,15 @@ async def send_shopping_list(recipe_id: int):
 
     headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
 
+    sent = 0
     async with httpx.AsyncClient() as client:
-        # Create a project named after the recipe
-        proj_resp = await client.post(
-            f"{_TODOIST_API}/projects",
-            headers=headers,
-            json={"name": recipe["title"]},
-        )
-        if proj_resp.status_code in (200, 204):
-            project_id = proj_resp.json().get("id")
-        else:
-            project_id = None  # fall back to inbox
-
-        # Post each missing ingredient as a task
         for ing in missing:
-            payload = {"content": ing}
-            if project_id:
-                payload["project_id"] = project_id
-            await client.post(f"{_TODOIST_API}/tasks", headers=headers, json=payload)
+            resp = await client.post(
+                f"{_TODOIST_API}/tasks",
+                headers=headers,
+                json={"content": ing},
+            )
+            if resp.status_code == 200:
+                sent += 1
 
-    project_url = f"https://todoist.com/app/project/{project_id}" if project_id else "https://todoist.com/app/inbox"
-    return {"sent": len(missing), "project_url": project_url}
+    return {"sent": sent}
