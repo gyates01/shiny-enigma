@@ -15,6 +15,7 @@ router = APIRouter()
 class AddItemRequest(BaseModel):
     name: str
     note: Optional[str] = None
+    stock_value: Optional[str] = None
 
 
 class PatchItemRequest(BaseModel):
@@ -37,7 +38,7 @@ def api_add_pantry_item(body: AddItemRequest, db: Path = Depends(get_db_path)):
     category = detect_category(name)
     stock_mode = detect_stock_mode(category, name)
     try:
-        return add_item(name, body.note, category, stock_mode, db_path=db)
+        return add_item(name, body.note, category, stock_mode, body.stock_value, db_path=db)
     except sqlite3.IntegrityError:
         raise HTTPException(status_code=409, detail=f"'{name}' is already in your pantry")
 

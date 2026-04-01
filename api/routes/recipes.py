@@ -9,7 +9,8 @@ from pydantic import BaseModel
 from api.deps import get_db_path
 from recipe_extractor.scraper import extract_recipe
 from recipe_extractor.database import (
-    filter_recipes, get_recipe, get_recipe_by_url, save_recipe, delete_recipe, update_recipe
+    filter_recipes, get_recipe, get_recipe_by_url, save_recipe, delete_recipe, update_recipe,
+    log_cook, get_cook_log, delete_cook_entry,
 )
 from recipe_extractor.pantry import list_items
 from api.utils.normalizer import is_on_hand, find_pantry_match
@@ -35,6 +36,11 @@ def _annotate_ingredient(ing_text: str, pantry_items: list[dict]) -> dict:
 
 class AddRecipeRequest(BaseModel):
     url: str
+
+
+class CookRequest(BaseModel):
+    rating: Optional[int] = None
+    note: Optional[str] = None
 
 
 class UpdateRecipeRequest(BaseModel):
@@ -178,3 +184,23 @@ async def api_upload_image(
     image_url = f"/images/{recipe_id}{ext}"
     update_recipe(recipe_id, {"image_url": image_url}, db_path=db)
     return {"image_url": image_url}
+
+
+@router.post("/recipes/{recipe_id}/cook", status_code=201)
+def api_log_cook(recipe_id: int, body: CookRequest, db: Path = Depends(get_db_path)):
+    if not get_recipe(recipe_id, db_path=db):
+        raise HTTPException(status_code=404, detail="Recipe not found")
+    return log_cook(recipe_id, body.rating, body.note, db_path=db)
+
+
+@router.get("/recipes/{recipe_id}/cooks")
+def api_get_cook_log(recipe_id: int, db: Path = Depends(get_db_path)):
+    if not get_recipe(recipe_id, db_path=db):
+        raise HTTPException(status_code=404, detail="Recipe not found")
+    return get_cook_log(recipe_id, db_path=db)
+
+
+@router.delete("/recipes/{recipe_id}/cooks/{entry_id}", status_code=204)
+def api_delete_cook_entry(recipe_id: int, entry_id: int, db: Path = Depends(get_db_path)):
+    if not delete_cook_entry(entry_id, db_path=db):
+        raise HTTPException(status_code=404, detail="Cook log entry not found")

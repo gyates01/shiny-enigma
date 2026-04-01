@@ -46,16 +46,28 @@ export const api = {
     return request(`/recipes/${id}/image`, { method: 'POST', body: fd })
   },
   getStats: () => request('/stats'),
+  askRecipe: (id, question) => request(`/recipes/${id}/ask`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question }),
+  }),
+  getCookLog: (id) => request(`/recipes/${id}/cooks`),
+  deleteCookEntry: (recipeId, entryId) => request(`/recipes/${recipeId}/cooks/${entryId}`, { method: 'DELETE' }),
+  logCook: (id, rating, note) => request(`/recipes/${id}/cook`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ rating: rating ?? undefined, note: note || undefined }),
+  }),
   exportUrl: () => `${BASE}/export`,
 }
 
 // Pantry
 export const getPantry  = ()            => fetch('/api/pantry').then(r => r.json()).catch(() => []);
-export const addPantryItem = (name, note) =>
+export const addPantryItem = (name, note, stockValue) =>
   fetch('/api/pantry', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, note: note || undefined }),
+    body: JSON.stringify({ name, note: note || undefined, stock_value: stockValue || undefined }),
   }).catch(() => null);
 export const deletePantryItem = (id) =>
   fetch(`/api/pantry/${id}`, { method: 'DELETE' }).catch(() => null);

@@ -48,9 +48,9 @@ function StockControl({ item, onUpdate }) {
 
   function cycleBackup(e) {
     if (e) e.preventDefault();
-    const isSpice = item.category === 'Spices';
+    const isSpice = item.category === 'Spices' || item.category === 'Pantry';
     const step = isSpice ? 0.5 : 1;
-    const numSteps = isSpice ? 7 : 4; // spices: 0,0.5,1,...,3 | others: 0,1,2,3
+    const numSteps = isSpice ? 7 : 4; // spices/pantry: 0,0.5,1,...,3 | others: 0,1,2,3
     const current = parseFloat(item.backup_value ?? '0') || 0;
     const idx = Math.round(current / step);
     const delta = e?.type === 'contextmenu' ? -1 : 1;
@@ -186,7 +186,7 @@ export default function Pantry() {
     setError('');
     const name = input.trim();
     if (!name) return;
-    const res = await addPantryItem(name, null);
+    const res = await addPantryItem(name, null, initLevel);
     if (!res) {
       setError('Something went wrong. Please try again.');
       return;
@@ -203,11 +203,7 @@ export default function Pantry() {
       setError('Something went wrong. Please try again.');
       return;
     }
-    let item = await res.json();
-    if (initLevel !== null && item.stock_mode === 'level') {
-      item = { ...item, stock_value: initLevel };
-      patchPantryItem(item.id, { stock_value: initLevel }).catch(() => {});
-    }
+    const item = await res.json();
     setItems(prev => [...prev, item].sort((a, b) =>
       a.category.localeCompare(b.category) || a.name.localeCompare(b.name)
     ));
@@ -264,9 +260,9 @@ export default function Pantry() {
           }}
         >
           <option value="">—</option>
-          <option value="full">Full</option>
-          <option value="med">Med</option>
-          <option value="low">Low</option>
+          {LEVEL_CYCLE.filter(v => v !== null).map(v => (
+            <option key={v} value={v}>{LEVEL_STYLE[v].label}</option>
+          ))}
         </select>
         <button
           type="submit"

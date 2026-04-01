@@ -1,55 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { api, addPantryItem } from '../lib/api'
+import { api } from '../lib/api'
 
 const isProd = import.meta.env.PROD
 
-// Mirrors api/utils/normalizer.py — strips quantities/units/prep from ingredient strings
-function normalizeIngredient(text) {
-  let s = text.toLowerCase();
-  s = s.replace(/\s*,.*$|\s*\(.*?\)|\s*;.*$/g, '');
-  s = s.replace(/^\s*(?:a\s+(?:pinch|dash|handful)\s+of\s+)?(?:\d[\d\s/.\-]*\s*)?/, '');
-  s = s.replace(/^(?:cups?|tablespoons?|tbsps?|teaspoons?|tsps?|pounds?|lbs?|ounces?|oz|grams?|g\b|kg|cloves?|stalks?|heads?|bags?|cans?|pieces?|sprigs?|pinch(?:es)?|dashes?)\s+/i, '');
-  s = s.replace(/\b(?:fresh|freshly|dried|large|small|medium|extra|virgin|fine|ground|whole|raw|divided|ripe|firm|cooked|chopped|sliced|diced)\b\s*/gi, '');
-  s = s.replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
-  return s;
-}
-
-function AddMissingButton({ missingIngredients }) {
-  const [adding, setAdding] = useState(false)
-  const [status, setStatus] = useState('')
-
-  async function handleClick() {
-    setAdding(true)
-    const results = await Promise.all(
-      missingIngredients.map(text => {
-        const name = normalizeIngredient(text)
-        return name ? addPantryItem(name) : Promise.resolve(null)
-      })
-    )
-    const added = results.filter(r => r?.status === 201).length
-    setStatus(added > 0 ? `Added ${added} item${added !== 1 ? 's' : ''} to pantry` : 'All already in pantry')
-    setAdding(false)
-    setTimeout(() => setStatus(''), 3000)
-  }
-
-  return (
-    <div style={{ marginTop: 8 }}>
-      <button
-        onClick={handleClick}
-        disabled={adding}
-        style={{
-          background: '#1f2937', color: '#9ca3af', border: '1px solid #374151',
-          borderRadius: 8, padding: '8px 14px', fontSize: 13, cursor: 'pointer',
-          opacity: adding ? 0.6 : 1,
-        }}
-      >
-        Add missing to pantry
-      </button>
-      {status && <span style={{ marginLeft: 10, fontSize: 12, color: '#6ee7b7' }}>{status}</span>}
-    </div>
-  )
-}
 
 function cleanServings(s) {
   if (!s) return null
@@ -130,6 +84,186 @@ function toImperial(text) {
   return text
 }
 
+const QUICK_PROMPTS = [
+  { label: 'Substitutions', q: 'What are the best substitutions for each ingredient in this recipe?' },
+  { label: 'Scale 2×',      q: 'Scale this recipe to double the servings. List every ingredient with the new quantity.' },
+  { label: 'Wine pairing',  q: 'What wine or drink pairs best with this dish?' },
+  { label: 'Make it vegan', q: 'How can I make this recipe fully vegan? List each swap needed.' },
+]
+
+function RecipeAssistant({ recipeId, open, onClose }) {
+  const [messages, setMessages] = useState([])
+  const [input, setInput] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const send = async (question) => {
+    if (!question.trim() || loading) return
+    const q = question.trim()
+    setMessages(prev => [...prev, { role: 'user', text: q }])
+    setInput('')
+    setLoading(true)
+    try {
+      const { answer } = await api.askRecipe(recipeId, q)
+      setMessages(prev => [...prev, { role: 'assistant', text: answer }])
+    } catch (e) {
+      setMessages(prev => [...prev, { role: 'assistant', text: `Error: ${e.message}` }])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (!open) return null
+
+  return (
+    <div style={{
+      position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 900,
+      display: 'flex', justifyContent: 'center', padding: '0 16px 16px',
+      pointerEvents: 'none',
+    }}>
+      <div style={{
+        width: '100%', maxWidth: 560, background: '#111827',
+        border: '1px solid #1f2937', borderRadius: '16px 16px 12px 12px',
+        boxShadow: '0 -8px 40px rgba(0,0,0,0.6)', pointerEvents: 'all',
+        display: 'flex', flexDirection: 'column', maxHeight: '60vh',
+      }}>
+        {/* Header */}
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          padding: '12px 16px', borderBottom: '1px solid #1f2937', flexShrink: 0,
+        }}>
+          <span style={{ fontSize: 14, fontWeight: 600, color: '#a78bfa' }}>✦ Recipe Assistant</span>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: 18 }}>×</button>
+        </div>
+
+        {/* Messages */}
+        {messages.length > 0 && (
+          <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {messages.map((m, i) => (
+              <div key={i} style={{
+                alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
+                maxWidth: '85%',
+                background: m.role === 'user' ? 'rgba(124,106,247,0.2)' : '#1f2937',
+                border: `1px solid ${m.role === 'user' ? 'rgba(124,106,247,0.35)' : '#374151'}`,
+                borderRadius: m.role === 'user' ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
+                padding: '8px 12px', fontSize: 13, lineHeight: 1.5, color: '#f3f4f6',
+                whiteSpace: 'pre-wrap',
+              }}>{m.text}</div>
+            ))}
+            {loading && (
+              <div style={{
+                alignSelf: 'flex-start', background: '#1f2937', border: '1px solid #374151',
+                borderRadius: '12px 12px 12px 4px', padding: '8px 12px', fontSize: 13, color: '#6b7280',
+              }}>Thinking…</div>
+            )}
+          </div>
+        )}
+
+        {/* Quick prompts */}
+        {messages.length === 0 && (
+          <div style={{ padding: '10px 16px 0', display: 'flex', gap: 6, flexWrap: 'wrap', flexShrink: 0 }}>
+            {QUICK_PROMPTS.map(p => (
+              <button key={p.label} onClick={() => send(p.q)} style={{
+                background: 'rgba(124,106,247,0.1)', border: '1px solid rgba(124,106,247,0.25)',
+                color: '#a78bfa', borderRadius: 20, padding: '5px 12px', fontSize: 12,
+                cursor: 'pointer', fontWeight: 500,
+              }}>{p.label}</button>
+            ))}
+          </div>
+        )}
+
+        {/* Input */}
+        <div style={{ display: 'flex', gap: 8, padding: '10px 12px', flexShrink: 0 }}>
+          <input
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send(input)}
+            placeholder="Ask anything about this recipe…"
+            disabled={loading}
+            style={{
+              flex: 1, background: '#1f2937', border: '1px solid #374151',
+              borderRadius: 8, padding: '8px 12px', color: '#f3f4f6', fontSize: 13,
+            }}
+          />
+          <button onClick={() => send(input)} disabled={loading || !input.trim()} style={{
+            background: '#7c6af7', border: 'none', color: '#fff', borderRadius: 8,
+            padding: '8px 14px', fontSize: 13, cursor: 'pointer', fontWeight: 600,
+            opacity: loading || !input.trim() ? 0.5 : 1,
+          }}>↑</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function MadeItModal({ onSave, onCancel }) {
+  const [rating, setRating] = useState(0)
+  const [hovered, setHovered] = useState(0)
+  const [note, setNote] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const submit = async (skipRating) => {
+    setSaving(true)
+    await onSave(skipRating ? null : (rating || null), note.trim() || null)
+  }
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 1000,
+      background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: 20,
+    }} onClick={e => { if (e.target === e.currentTarget) onCancel() }}>
+      <div style={{
+        background: '#111827', border: '1px solid #1f2937', borderRadius: 16,
+        padding: 28, width: '100%', maxWidth: 360,
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 600 }}>Log this cook</h2>
+          <button onClick={onCancel} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: 18 }}>×</button>
+        </div>
+
+        <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginBottom: 20 }}>
+          {[1,2,3,4,5].map(n => (
+            <span key={n}
+              onClick={() => setRating(n === rating ? 0 : n)}
+              onMouseEnter={() => setHovered(n)}
+              onMouseLeave={() => setHovered(0)}
+              style={{
+                fontSize: 28, cursor: 'pointer',
+                color: n <= (hovered || rating) ? '#fbbf24' : '#374151',
+                transition: 'color 0.1s',
+              }}>★</span>
+          ))}
+        </div>
+
+        <textarea
+          value={note}
+          onChange={e => setNote(e.target.value)}
+          placeholder="Optional note (e.g. added extra garlic...)"
+          rows={3}
+          style={{
+            width: '100%', background: '#1f2937', border: '1px solid #374151',
+            borderRadius: 8, padding: '8px 12px', color: '#f3f4f6', fontSize: 13,
+            resize: 'vertical', boxSizing: 'border-box',
+          }}
+        />
+
+        <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+          <button onClick={() => submit(false)} disabled={saving} style={{
+            flex: 1, background: '#7c6af7', border: 'none', color: '#fff',
+            borderRadius: 8, padding: '10px 0', fontSize: 14, cursor: 'pointer',
+            opacity: saving ? 0.6 : 1, fontWeight: 600,
+          }}>Save</button>
+          <button onClick={() => submit(true)} disabled={saving} style={{
+            flex: 1, background: '#1f2937', border: '1px solid #374151', color: '#9ca3af',
+            borderRadius: 8, padding: '10px 0', fontSize: 14, cursor: 'pointer',
+            opacity: saving ? 0.6 : 1,
+          }}>Skip</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function RecipeDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -139,10 +273,19 @@ export default function RecipeDetail() {
   const [error, setError] = useState('')
   const [deleting, setDeleting] = useState(false)
   const [pantryEmpty, setPantryEmpty] = useState(true)
+  const [cookModal, setCookModal] = useState(false)
+  const [cookCount, setCookCount] = useState(0)
+  const [lastCooked, setLastCooked] = useState(null)
+  const [cookConfirm, setCookConfirm] = useState('')
+  const [assistantOpen, setAssistantOpen] = useState(false)
 
   useEffect(() => {
     api.getRecipe(id)
-      .then(setRecipe)
+      .then(r => {
+        setRecipe(r)
+        setCookCount(r.cook_count ?? 0)
+        setLastCooked(r.last_cooked_at ?? null)
+      })
       .catch(e => setError(e.message))
     if (!isProd) {
       fetch('/api/pantry')
@@ -151,6 +294,20 @@ export default function RecipeDetail() {
         .catch(() => {})
     }
   }, [id])
+
+  const handleCookSave = async (rating, note) => {
+    try {
+      await api.logCook(id, rating, note)
+      setCookCount(c => c + 1)
+      setLastCooked(new Date().toISOString())
+      setCookConfirm('Logged!')
+      setTimeout(() => setCookConfirm(''), 3000)
+    } catch {
+      setCookConfirm('Failed to save')
+      setTimeout(() => setCookConfirm(''), 3000)
+    }
+    setCookModal(false)
+  }
 
   const toggleCheck = (i) => setChecked(prev => ({ ...prev, [i]: !prev[i] }))
 
@@ -171,21 +328,22 @@ export default function RecipeDetail() {
 
   const hasOnHand = recipe.ingredients?.some(i => i.on_hand) ?? false
 
-  const meta = [
-    recipe.cuisine && `Cuisine: ${recipe.cuisine}`,
-    recipe.category && `Category: ${recipe.category}`,
-    cleanServings(recipe.servings) && `Serves: ${cleanServings(recipe.servings)}`,
-    fmtTime(recipe.total_time) && `Time: ${fmtTime(recipe.total_time)}`,
+  const metaChips = [
+    recipe.cuisine    && { label: recipe.cuisine,                    color: '#c4b8ff', bg: 'rgba(124,106,247,0.12)', border: 'rgba(124,106,247,0.25)' },
+    recipe.category   && { label: recipe.category,                   color: '#2dd4bf', bg: 'rgba(20,184,166,0.1)',   border: 'rgba(20,184,166,0.25)'  },
+    cleanServings(recipe.servings) && { label: `${cleanServings(recipe.servings)} servings`, color: '#94a3b8', bg: 'rgba(148,163,184,0.08)', border: 'rgba(148,163,184,0.2)' },
+    fmtTime(recipe.total_time)     && { label: `⏱ ${fmtTime(recipe.total_time)}`,           color: '#94a3b8', bg: 'rgba(148,163,184,0.08)', border: 'rgba(148,163,184,0.2)' },
   ].filter(Boolean)
 
-  const nutrition = [
-    recipe.calories && `${Math.round(recipe.calories)} cal`,
-    recipe.protein_g && `${recipe.protein_g.toFixed(1)}g protein`,
-    recipe.carbs_g && `${recipe.carbs_g.toFixed(1)}g carbs`,
-    recipe.fat_g && `${recipe.fat_g.toFixed(1)}g fat`,
+  const nutritionCards = [
+    recipe.calories  && { label: 'Calories', value: `${Math.round(recipe.calories)}`,       unit: 'kcal'    },
+    recipe.protein_g && { label: 'Protein',  value: recipe.protein_g.toFixed(1),            unit: 'g'       },
+    recipe.carbs_g   && { label: 'Carbs',    value: recipe.carbs_g.toFixed(1),              unit: 'g'       },
+    recipe.fat_g     && { label: 'Fat',      value: recipe.fat_g.toFixed(1),                unit: 'g'       },
   ].filter(Boolean)
 
   return (
+    <>
     <div className="page" style={recipe.image_url ? { paddingBottom: 0 } : undefined}>
       <button onClick={() => navigate('/recipes')} style={{
         background: 'none', border: 'none', color: '#888', cursor: 'pointer',
@@ -195,6 +353,15 @@ export default function RecipeDetail() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, flex: 1 }}>{recipe.title}</h1>
         <div style={{ display: 'flex', gap: 8, marginLeft: 16, flexShrink: 0 }}>
+          <button onClick={() => setAssistantOpen(o => !o)} style={{
+            background: assistantOpen ? 'rgba(124,106,247,0.2)' : 'rgba(124,106,247,0.08)',
+            border: '1px solid rgba(124,106,247,0.35)',
+            color: '#a78bfa', cursor: 'pointer', borderRadius: 6, padding: '6px 14px', fontSize: 13, fontWeight: 500,
+          }}>✦ Ask</button>
+          <button onClick={() => setCookModal(true)} style={{
+            background: 'rgba(124,106,247,0.12)', border: '1px solid rgba(124,106,247,0.35)',
+            color: '#a78bfa', cursor: 'pointer', borderRadius: 6, padding: '6px 14px', fontSize: 13, fontWeight: 500,
+          }}>✓ Made it</button>
           <button onClick={() => navigate(`/recipes/${id}/edit`)} style={{
             background: 'none', border: '1px solid #444', color: '#aaa', cursor: 'pointer',
             borderRadius: 6, padding: '6px 14px', fontSize: 13,
@@ -205,6 +372,15 @@ export default function RecipeDetail() {
           }}>{deleting ? '...' : 'Delete'}</button>
         </div>
       </div>
+
+      {cookCount > 0 && (
+        <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 4 }}>
+          Made {cookCount}× · last {new Date(lastCooked).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+        </div>
+      )}
+      {cookConfirm && (
+        <div style={{ fontSize: 13, color: '#6ee7b7', marginBottom: 4 }}>{cookConfirm}</div>
+      )}
 
       {recipe.image_url && (
         <div style={{
@@ -225,22 +401,40 @@ export default function RecipeDetail() {
         ...(recipe.image_url ? { borderRadius: '20px 20px 0 0', marginTop: -28, paddingTop: 24, paddingBottom: 24 } : {}),
       }}>
 
-      <a href={recipe.source_url} target="_blank" rel="noreferrer"
-         style={{ color: '#7c6af7', fontSize: 13, wordBreak: 'break-all' }}>
-        {recipe.source_url}
-      </a>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '0 0 24px' }}>
+        {recipe.source_url && (
+          <a href={recipe.source_url} target="_blank" rel="noreferrer"
+             style={{ color: '#6b7280', fontSize: 12, wordBreak: 'break-all', marginBottom: metaChips.length ? 12 : 0, textAlign: 'center' }}>
+            {recipe.source_url}
+          </a>
+        )}
 
-      {meta.length > 0 && (
-        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', margin: '16px 0', fontSize: 14, color: '#888' }}>
-          {meta.map(m => <span key={m}>{m}</span>)}
-        </div>
-      )}
+        {metaChips.length > 0 && (
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center', marginBottom: nutritionCards.length ? 14 : 0 }}>
+            {metaChips.map(c => (
+              <span key={c.label} style={{
+                background: c.bg, border: `1px solid ${c.border}`, color: c.color,
+                borderRadius: 20, padding: '4px 12px', fontSize: 12, fontWeight: 500,
+              }}>{c.label}</span>
+            ))}
+          </div>
+        )}
 
-      {nutrition.length > 0 && (
-        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 24, fontSize: 14, color: '#aaa' }}>
-          {nutrition.map(n => <span key={n}>{n}</span>)}
-        </div>
-      )}
+        {nutritionCards.length > 0 && (
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', marginTop: 4, width: '100%', maxWidth: 380 }}>
+            {nutritionCards.map(n => (
+              <div key={n.label} style={{
+                background: '#111827', border: '1px solid #1f2937', borderRadius: 10,
+                padding: '10px 14px', textAlign: 'center', flex: '1 0 70px',
+              }}>
+                <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 500, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{n.label}</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: '#f3f4f6', lineHeight: 1 }}>{n.value}</div>
+                <div style={{ fontSize: 11, color: '#4b5563', marginTop: 2 }}>{n.unit}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {recipe.ingredients?.length > 0 && (
         <section style={{ marginBottom: 28 }}>
@@ -333,6 +527,14 @@ export default function RecipeDetail() {
                       }}>
                         {imperial ? toImperial(ing.text) : ing.text}
                       </span>
+                      {ing.stock_mode === 'level' && ing.stock_value && (
+                        <span style={{
+                          background: ing.stock_value === 'full' ? '#14532d' : ing.stock_value === 'med' ? '#451a03' : '#450a0a',
+                          color:      ing.stock_value === 'full' ? '#86efac' : ing.stock_value === 'med' ? '#fcd34d' : '#fca5a5',
+                          borderRadius: 6, padding: '1px 7px', fontSize: 11, fontWeight: 600,
+                          whiteSpace: 'nowrap', flexShrink: 0,
+                        }}>{ing.stock_value}</span>
+                      )}
                       {ing.backup_value && ing.backup_value !== '0' && (
                         <span style={{
                           background: '#1f2937', border: '1px solid #374151', color: '#9ca3af',
@@ -387,9 +589,7 @@ export default function RecipeDetail() {
                 </div>
               )}
 
-              {recipe.ingredients.some(i => !i.on_hand) && (
-                <AddMissingButton missingIngredients={recipe.ingredients.filter(i => !i.on_hand).map(i => i.text)} />
-              )}
+
             </>
           )}
         </section>
@@ -413,5 +613,11 @@ export default function RecipeDetail() {
 
       </div>
     </div>
+
+    {cookModal && (
+      <MadeItModal onSave={handleCookSave} onCancel={() => setCookModal(false)} />
+    )}
+    <RecipeAssistant recipeId={id} open={assistantOpen} onClose={() => setAssistantOpen(false)} />
+    </>
   )
 }

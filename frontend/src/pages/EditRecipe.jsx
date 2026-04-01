@@ -10,8 +10,10 @@ export default function EditRecipe() {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
   const [imageError, setImageError] = useState('')
+  const [cookLog, setCookLog] = useState([])
 
   useEffect(() => {
+    api.getCookLog(id).then(setCookLog).catch(() => {})
     api.getRecipe(id)
       .then(r => setForm({
         title: r.title || '',
@@ -200,6 +202,45 @@ export default function EditRecipe() {
             ))}
           </div>
         </div>
+
+        {/* Cook history */}
+        {cookLog.length > 0 && (
+          <div style={section}>
+            {label(`Cook History (${cookLog.length}×)`)}
+            {cookLog.map(entry => (
+              <div key={entry.id} style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                padding: '8px 0', borderBottom: '1px solid var(--border)', fontSize: 13,
+              }}>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center', flex: 1 }}>
+                  <span style={{ color: 'var(--text-dim)' }}>
+                    {new Date(entry.cooked_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </span>
+                  {entry.rating && (
+                    <span style={{ color: '#fbbf24' }}>{'★'.repeat(entry.rating)}</span>
+                  )}
+                  {entry.note && (
+                    <span style={{ color: 'var(--text-dim)', fontStyle: 'italic' }}>{entry.note}</span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!confirm('Remove this cook entry?')) return
+                    api.deleteCookEntry(id, entry.id)
+                      .then(() => setCookLog(prev => prev.filter(e => e.id !== entry.id)))
+                      .catch(() => {})
+                  }}
+                  style={{
+                    background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer',
+                    fontSize: 16, padding: '0 4px', marginLeft: 12, flexShrink: 0,
+                  }}
+                  title="Remove this entry"
+                >×</button>
+              </div>
+            ))}
+          </div>
+        )}
 
         <div style={{ display: 'flex', gap: 12, marginTop: 4 }}>
           <button type="submit" className="btn btn-primary" disabled={saving}>

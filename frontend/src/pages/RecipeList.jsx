@@ -88,11 +88,20 @@ function RecipeCard({ recipe, onClick }) {
           </div>
         )}
 
-        {meta.length > 0 && (
-          <div style={{ display: 'flex', gap: 14, color: 'var(--text-dim)', fontSize: 13, marginTop: 'auto' }}>
-            {meta.map(m => <span key={m}>{m}</span>)}
-          </div>
-        )}
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 'auto', flexWrap: 'wrap' }}>
+          {meta.length > 0 && (
+            <div style={{ display: 'flex', gap: 14, color: 'var(--text-dim)', fontSize: 13 }}>
+              {meta.map(m => <span key={m}>{m}</span>)}
+            </div>
+          )}
+          {recipe.cook_count > 0 && (
+            <span style={{
+              marginLeft: 'auto', background: 'rgba(124,106,247,0.12)',
+              border: '1px solid rgba(124,106,247,0.25)', color: '#a78bfa',
+              borderRadius: 20, padding: '2px 9px', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap',
+            }}>Made {recipe.cook_count}×</span>
+          )}
+        </div>
       </div>
     </div>
   )

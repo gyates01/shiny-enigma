@@ -45,6 +45,7 @@ def add_item(
     note: Optional[str],
     category: str,
     stock_mode: str = 'level',
+    stock_value: Optional[str] = None,
     db_path: Path = DB_PATH,
 ) -> dict:
     """Insert a new pantry item. Raises sqlite3.IntegrityError on duplicate name."""
@@ -52,14 +53,14 @@ def add_item(
     now = datetime.now(timezone.utc).isoformat()
     with _connect(db_path) as conn:
         cur = conn.execute(
-            "INSERT INTO pantry_items (name, note, category, added_at, stock_mode) "
-            "VALUES (?, ?, ?, ?, ?)",
-            (name, note, category, now, stock_mode),
+            "INSERT INTO pantry_items (name, note, category, added_at, stock_mode, stock_value) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (name, note, category, now, stock_mode, stock_value),
         )
         return {
             "id": cur.lastrowid, "name": name, "note": note,
             "category": category, "added_at": now,
-            "stock_mode": stock_mode, "stock_value": None, "backup_value": None,
+            "stock_mode": stock_mode, "stock_value": stock_value, "backup_value": None,
         }
 
 

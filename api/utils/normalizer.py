@@ -38,6 +38,27 @@ def normalize_ingredient(ingredient: str) -> str:
     return _SPACE_RE.sub(' ', s).strip()
 
 
+# Words that transform an ingredient into something categorically different from its base.
+# If the normalized ingredient contains one of these and the pantry item does not,
+# the match is rejected — e.g. "chicken" should not match "chicken broth".
+_DISQUALIFIERS = frozenset({
+    # Changes base ingredient into something processed / functionally different
+    'broth', 'stock', 'powder', 'paste', 'sauce', 'juice', 'extract',
+    'flakes', 'flour', 'seeds', 'butter', 'cream', 'curd',
+    # Compound forms — tortilla/noodle/chip change what the ingredient IS
+    'tortilla', 'noodle', 'chip', 'wrap', 'cracker',
+    # Color/variety modifiers that create distinct ingredients
+    'brown', 'dark', 'light',
+})
+
+
+def _has_disqualifier(norm_ingredient: str, pantry_item_name: str) -> bool:
+    """Return True if ingredient has a disqualifying word that the pantry item lacks."""
+    ing_words = set(norm_ingredient.split())
+    item_words = set(pantry_item_name.lower().split())
+    return bool((ing_words & _DISQUALIFIERS) - item_words)
+
+
 def is_on_hand(ingredient: str, pantry_names: list[str]) -> bool:
     """Return True if any pantry item name appears as a whole word in the normalized ingredient.
 
@@ -46,10 +67,12 @@ def is_on_hand(ingredient: str, pantry_names: list[str]) -> bool:
     Intentionally one-directional: the pantry item must be contained within the
     ingredient — not the reverse — so 'rice flour' in pantry does not match
     the ingredient 'rice'.
+    Disqualifier check prevents broad matches like 'chicken' matching 'chicken broth'.
     """
     norm = normalize_ingredient(ingredient)
     return any(
         re.search(r'\b' + re.escape(item.lower()) + r'\b', norm)
+        and not _has_disqualifier(norm, item)
         for item in pantry_names
     )
 
@@ -57,12 +80,12 @@ def is_on_hand(ingredient: str, pantry_names: list[str]) -> bool:
 def find_pantry_match(ing_text: str, pantry_items: list[dict]) -> dict | None:
     """Return the first pantry item whose name matches ing_text (word-boundary), or None.
 
-    Uses the same word-boundary logic as is_on_hand. Returns the full item dict
-    so callers can access stock_mode, stock_value, backup_value, etc.
+    Uses the same word-boundary + disqualifier logic as is_on_hand.
     """
     norm = normalize_ingredient(ing_text)
     for item in pantry_items:
-        if re.search(r'\b' + re.escape(item['name'].lower()) + r'\b', norm):
+        if (re.search(r'\b' + re.escape(item['name'].lower()) + r'\b', norm)
+                and not _has_disqualifier(norm, item['name'])):
             return dict(item)
     return None
 
@@ -70,6 +93,8 @@ def find_pantry_match(ing_text: str, pantry_items: list[dict]) -> dict | None:
 # Category detection lookup. More-specific keys come before general ones
 # so that e.g. "bell pepper" → Produce before "pepper" → Spices.
 CATEGORY_MAP: dict[str, str] = {
+    # Multi-word overrides that would otherwise match a shorter base-word entry first
+    "avocado oil": "Pantry",
     # Produce
     "bell pepper": "Produce", "green onion": "Produce", "scallion": "Produce",
     "garlic": "Produce", "onion": "Produce", "tomato": "Produce",

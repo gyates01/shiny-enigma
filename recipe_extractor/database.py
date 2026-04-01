@@ -52,6 +52,18 @@ def init_db(db_path: Path = DB_PATH) -> None:
         conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_cuisine ON recipes (cuisine COLLATE NOCASE)"
         )
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS recipe_cook_log (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                recipe_id  INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+                cooked_at  TEXT    NOT NULL,
+                rating     INTEGER,
+                note       TEXT
+            )
+        """)
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_cook_log_recipe ON recipe_cook_log (recipe_id)"
+        )
 
 
 def save_recipe(recipe: dict, db_path: Path = DB_PATH) -> int:
@@ -117,14 +129,56 @@ def save_recipe(recipe: dict, db_path: Path = DB_PATH) -> int:
         return cur.lastrowid
 
 
+_COOK_STATS_JOIN = """
+    LEFT JOIN (
+        SELECT recipe_id, COUNT(*) AS cook_count, MAX(cooked_at) AS last_cooked_at
+        FROM recipe_cook_log GROUP BY recipe_id
+    ) cl ON cl.recipe_id = recipes.id
+"""
+
+
+def get_cook_log(recipe_id: int, db_path: Path = DB_PATH) -> list[dict]:
+    """Return all cook-log entries for a recipe, newest first."""
+    init_db(db_path)
+    with _connect(db_path) as conn:
+        rows = conn.execute(
+            "SELECT id, recipe_id, cooked_at, rating, note FROM recipe_cook_log "
+            "WHERE recipe_id = ? ORDER BY cooked_at DESC",
+            (recipe_id,),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def delete_cook_entry(entry_id: int, db_path: Path = DB_PATH) -> bool:
+    """Delete a single cook-log entry. Returns True if a row was deleted."""
+    init_db(db_path)
+    with _connect(db_path) as conn:
+        cur = conn.execute("DELETE FROM recipe_cook_log WHERE id = ?", (entry_id,))
+    return cur.rowcount > 0
+
+
+def log_cook(recipe_id: int, rating: Optional[int], note: Optional[str], db_path: Path = DB_PATH) -> dict:
+    """Insert a cook-log entry. Returns the new row."""
+    init_db(db_path)
+    now = datetime.now(timezone.utc).isoformat()
+    with _connect(db_path) as conn:
+        cur = conn.execute(
+            "INSERT INTO recipe_cook_log (recipe_id, cooked_at, rating, note) VALUES (?, ?, ?, ?)",
+            (recipe_id, now, rating, note),
+        )
+        return {"id": cur.lastrowid, "recipe_id": recipe_id, "cooked_at": now, "rating": rating, "note": note}
+
+
 def list_recipes(db_path: Path = DB_PATH) -> list[dict]:
     """Return all recipes as a list of dicts (lightweight — no ingredients/instructions)."""
     init_db(db_path)
     with _connect(db_path) as conn:
-        rows = conn.execute("""
-            SELECT id, title, cuisine, category, total_time, calories, servings,
-                   date_added, source_url, image_url
+        rows = conn.execute(f"""
+            SELECT recipes.id, title, cuisine, category, total_time, calories, servings,
+                   date_added, source_url, image_url,
+                   COALESCE(cl.cook_count, 0) AS cook_count, cl.last_cooked_at
             FROM recipes
+            {_COOK_STATS_JOIN}
             ORDER BY date_added DESC
         """).fetchall()
     return [dict(r) for r in rows]
@@ -135,10 +189,12 @@ def search_recipes(query: str, db_path: Path = DB_PATH) -> list[dict]:
     init_db(db_path)
     like = f"%{query}%"
     with _connect(db_path) as conn:
-        rows = conn.execute("""
-            SELECT id, title, cuisine, category, total_time, calories, servings,
-                   date_added, source_url, image_url
+        rows = conn.execute(f"""
+            SELECT recipes.id, title, cuisine, category, total_time, calories, servings,
+                   date_added, source_url, image_url,
+                   COALESCE(cl.cook_count, 0) AS cook_count, cl.last_cooked_at
             FROM recipes
+            {_COOK_STATS_JOIN}
             WHERE title       LIKE :q COLLATE NOCASE
                OR cuisine     LIKE :q COLLATE NOCASE
                OR category    LIKE :q COLLATE NOCASE
@@ -189,9 +245,11 @@ def filter_recipes(
 
     with _connect(db_path) as conn:
         rows = conn.execute(f"""
-            SELECT id, title, cuisine, category, total_time, calories, servings,
-                   date_added, source_url, image_url
+            SELECT recipes.id, title, cuisine, category, total_time, calories, servings,
+                   date_added, source_url, image_url,
+                   COALESCE(cl.cook_count, 0) AS cook_count, cl.last_cooked_at
             FROM recipes
+            {_COOK_STATS_JOIN}
             {where}
             ORDER BY date_added DESC
         """, params).fetchall()
@@ -231,12 +289,16 @@ def update_recipe(recipe_id: int, fields: dict, db_path: Path = DB_PATH) -> bool
 
 
 def get_recipe(recipe_id: int, db_path: Path = DB_PATH) -> Optional[dict]:
-    """Fetch a single recipe by id, with full ingredients/instructions."""
+    """Fetch a single recipe by id, with full ingredients/instructions and cook stats."""
     init_db(db_path)
     with _connect(db_path) as conn:
-        row = conn.execute(
-            "SELECT * FROM recipes WHERE id = ?", (recipe_id,)
-        ).fetchone()
+        row = conn.execute(f"""
+            SELECT recipes.*,
+                   COALESCE(cl.cook_count, 0) AS cook_count, cl.last_cooked_at
+            FROM recipes
+            {_COOK_STATS_JOIN}
+            WHERE recipes.id = ?
+        """, (recipe_id,)).fetchone()
     if not row:
         return None
     r = dict(row)
@@ -281,12 +343,28 @@ def get_stats(db_path: Path = DB_PATH) -> dict:
             ORDER BY cnt DESC
             LIMIT 10
         """).fetchall()
+        total_cooks = conn.execute("SELECT COUNT(*) FROM recipe_cook_log").fetchone()[0]
+        made_count = conn.execute(
+            "SELECT COUNT(DISTINCT recipe_id) FROM recipe_cook_log"
+        ).fetchone()[0]
+        most_cooked_row = conn.execute("""
+            SELECT r.title, COUNT(*) AS cnt
+            FROM recipe_cook_log cl
+            JOIN recipes r ON r.id = cl.recipe_id
+            GROUP BY cl.recipe_id
+            ORDER BY cnt DESC LIMIT 1
+        """).fetchone()
     return {
         "total": total,
         "avg_calories": avg_cal,
         "avg_total_time_min": avg_time,
         "by_cuisine": [dict(r) for r in by_cuisine],
         "by_category": [dict(r) for r in by_category],
+        "total_cooks": total_cooks,
+        "made_count": made_count,
+        "never_made_count": total - made_count,
+        "most_cooked_title": most_cooked_row["title"] if most_cooked_row else None,
+        "most_cooked_count": most_cooked_row["cnt"] if most_cooked_row else None,
     }
 
 
