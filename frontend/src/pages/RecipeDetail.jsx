@@ -312,14 +312,15 @@ export default function RecipeDetail() {
       return
     }
     setTodoistLoading(true)
+    setTodoistMsg('Sending to Todoist…')
     try {
       const { sent } = await api.sendToTodoist(id)
-      setTodoistMsg(sent > 0 ? `Sent ${sent} items to Todoist ✓` : 'All ingredients already on hand')
+      setTodoistMsg(sent > 0 ? `${sent} items sent to Todoist ✓` : 'All ingredients already on hand')
     } catch (e) {
       setTodoistMsg(`Error: ${e.message}`)
+      setTimeout(() => setTodoistMsg(''), 5000)
     } finally {
       setTodoistLoading(false)
-      setTimeout(() => setTodoistMsg(''), 4000)
     }
   }
 
@@ -464,8 +465,8 @@ export default function RecipeDetail() {
         )}
       </div>
 
-      {(todoistMsg) && (
-        <div style={{ fontSize: 13, color: '#6ee7b7', marginBottom: 8 }}>{todoistMsg}</div>
+      {todoistMsg && (
+        <div style={{ fontSize: 13, color: todoistLoading ? '#6b7280' : '#6ee7b7', marginBottom: 8 }}>{todoistMsg}</div>
       )}
 
       {recipe.ingredients?.length > 0 && (
