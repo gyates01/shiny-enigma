@@ -12,7 +12,7 @@ router = APIRouter()
 
 _TODOIST_AUTH_URL = "https://todoist.com/oauth/authorize"
 _TODOIST_TOKEN_URL = "https://todoist.com/oauth/access_token"
-_TODOIST_API = "https://api.todoist.com/rest/v2"
+_TODOIST_API = "https://api.todoist.com/api/v1"
 
 
 def _client_id() -> str:
