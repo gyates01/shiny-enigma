@@ -60,7 +60,11 @@ export const api = {
   }),
   exportUrl: () => `${BASE}/export`,
   getTodoistStatus: () => request('/integrations/todoist/status'),
-  sendToTodoist: (recipeId) => request(`/recipes/${recipeId}/shopping-list`, { method: 'POST' }),
+  sendToTodoist: (recipeId, ingredients) => request(`/recipes/${recipeId}/shopping-list`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ingredients: ingredients ?? null }),
+  }),
   disconnectTodoist: () => request('/integrations/todoist/disconnect', { method: 'DELETE' }),
   todoistAuthUrl: () => `${BASE}/integrations/todoist/auth`,
 }

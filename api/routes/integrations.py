@@ -1,10 +1,12 @@
 """Todoist OAuth and shopping-list push integration."""
 
 import os
+from typing import Optional
 
 import httpx
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import RedirectResponse
+from pydantic import BaseModel
 
 from recipe_extractor.database import get_setting, set_setting, delete_setting, get_recipe
 
@@ -83,17 +85,23 @@ async def todoist_disconnect():
     return {"disconnected": True}
 
 
+class ShoppingListRequest(BaseModel):
+    ingredients: Optional[list[str]] = None
+
+
 @router.post("/recipes/{recipe_id}/shopping-list")
-async def send_shopping_list(recipe_id: int):
+async def send_shopping_list(recipe_id: int, body: ShoppingListRequest = ShoppingListRequest()):
     token = get_setting("todoist_token")
     if not token:
         raise HTTPException(status_code=401, detail="Todoist not connected")
 
-    recipe = get_recipe(recipe_id)
-    if not recipe:
-        raise HTTPException(status_code=404, detail="Recipe not found")
-
-    ingredients = recipe.get("ingredients") or []
+    if body.ingredients is not None:
+        ingredients = body.ingredients
+    else:
+        recipe = get_recipe(recipe_id)
+        if not recipe:
+            raise HTTPException(status_code=404, detail="Recipe not found")
+        ingredients = recipe.get("ingredients") or []
     if not ingredients:
         return {"sent": 0}
 

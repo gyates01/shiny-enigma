@@ -281,6 +281,7 @@ export default function RecipeDetail() {
   const [todoistConnected, setTodoistConnected] = useState(null)
   const [todoistMsg, setTodoistMsg] = useState('')
   const [todoistLoading, setTodoistLoading] = useState(false)
+  const [todoistPicked, setTodoistPicked] = useState(new Set())
 
   useEffect(() => {
     api.getRecipe(id)
@@ -306,16 +307,30 @@ export default function RecipeDetail() {
     api.getTodoistStatus().then(s => setTodoistConnected(s.connected)).catch(() => {})
   }, [id])
 
+  const toggleTodoistPick = (i, e) => {
+    e.stopPropagation()
+    setTodoistPicked(prev => {
+      const next = new Set(prev)
+      next.has(i) ? next.delete(i) : next.add(i)
+      return next
+    })
+  }
+
   const handleSendToTodoist = async () => {
     if (!todoistConnected) {
       window.open(api.todoistAuthUrl(), '_blank')
       return
     }
+    const allIngredients = recipe.ingredients?.map(i => i.text ?? i) ?? []
+    const toSend = todoistPicked.size > 0
+      ? [...todoistPicked].map(i => allIngredients[i]).filter(Boolean)
+      : allIngredients
     setTodoistLoading(true)
     setTodoistMsg('Sending to Todoist…')
     try {
-      const { sent } = await api.sendToTodoist(id)
-      setTodoistMsg(sent > 0 ? `${sent} items sent to Todoist ✓` : 'All ingredients already on hand')
+      const { sent } = await api.sendToTodoist(id, toSend)
+      setTodoistMsg(sent > 0 ? `${sent} items sent to Todoist ✓` : 'Nothing to send')
+      setTodoistPicked(new Set())
     } catch (e) {
       setTodoistMsg(`Error: ${e.message}`)
       setTimeout(() => setTodoistMsg(''), 5000)
@@ -495,7 +510,9 @@ export default function RecipeDetail() {
               fontWeight: 600, cursor: 'pointer', opacity: todoistLoading ? 0.6 : 1,
               whiteSpace: 'nowrap',
             }}>
-              {todoistLoading ? '…' : todoistConnected ? '✓ Send to Todoist' : '+ Connect Todoist'}
+              {todoistLoading ? '…' : todoistConnected
+                ? todoistPicked.size > 0 ? `Send ${todoistPicked.size} to Todoist` : 'Send to Todoist'
+                : '+ Connect Todoist'}
             </button>
           </div>
 
@@ -522,12 +539,22 @@ export default function RecipeDetail() {
                     {checked[i] && '✓'}
                   </span>
                   <span style={{
+                    flex: 1,
                     fontSize: 14,
                     color: checked[i] ? '#555' : '#f3f4f6',
                     textDecoration: checked[i] ? 'line-through' : 'none',
                   }}>
                     {text}
                   </span>
+                  {todoistConnected && (
+                    <span onClick={e => toggleTodoistPick(i, e)} style={{
+                      width: 16, height: 16, borderRadius: '50%', flexShrink: 0,
+                      border: `2px solid ${todoistPicked.has(i) ? '#f87171' : '#374151'}`,
+                      background: todoistPicked.has(i) ? '#f87171' : 'transparent',
+                      cursor: 'pointer', display: 'flex', alignItems: 'center',
+                      justifyContent: 'center', fontSize: 9, color: '#fff',
+                    }}>{todoistPicked.has(i) ? '✓' : ''}</span>
+                  )}
                 </div>
               )
             })
@@ -589,6 +616,15 @@ export default function RecipeDetail() {
                             : `+${ing.backup_value} backup`}
                         </span>
                       )}
+                      {todoistConnected && (
+                        <span onClick={e => toggleTodoistPick(i, e)} style={{
+                          width: 16, height: 16, borderRadius: '50%', flexShrink: 0,
+                          border: `2px solid ${todoistPicked.has(i) ? '#f87171' : '#374151'}`,
+                          background: todoistPicked.has(i) ? '#f87171' : 'transparent',
+                          cursor: 'pointer', display: 'flex', alignItems: 'center',
+                          justifyContent: 'center', fontSize: 9, color: '#fff',
+                        }}>{todoistPicked.has(i) ? '✓' : ''}</span>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -621,12 +657,22 @@ export default function RecipeDetail() {
                         {checked[i] && '✓'}
                       </span>
                       <span style={{
+                        flex: 1,
                         fontSize: 14,
                         color: checked[i] ? '#555' : '#f3f4f6',
                         textDecoration: checked[i] ? 'line-through' : 'none',
                       }}>
                         {imperial ? toImperial(ing.text) : ing.text}
                       </span>
+                      {todoistConnected && (
+                        <span onClick={e => toggleTodoistPick(i, e)} style={{
+                          width: 16, height: 16, borderRadius: '50%', flexShrink: 0,
+                          border: `2px solid ${todoistPicked.has(i) ? '#f87171' : '#374151'}`,
+                          background: todoistPicked.has(i) ? '#f87171' : 'transparent',
+                          cursor: 'pointer', display: 'flex', alignItems: 'center',
+                          justifyContent: 'center', fontSize: 9, color: '#fff',
+                        }}>{todoistPicked.has(i) ? '✓' : ''}</span>
+                      )}
                     </div>
                   ))}
                 </div>
