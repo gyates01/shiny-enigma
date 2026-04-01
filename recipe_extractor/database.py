@@ -73,12 +73,14 @@ def init_db(db_path: Path = DB_PATH) -> None:
 
 
 def get_setting(key: str, db_path: Path = DB_PATH) -> str | None:
+    init_db(db_path)
     with _connect(db_path) as conn:
         row = conn.execute("SELECT value FROM settings WHERE key = ?", (key,)).fetchone()
         return row["value"] if row else None
 
 
 def set_setting(key: str, value: str, db_path: Path = DB_PATH) -> None:
+    init_db(db_path)
     with _connect(db_path) as conn:
         conn.execute(
             "INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
@@ -87,6 +89,7 @@ def set_setting(key: str, value: str, db_path: Path = DB_PATH) -> None:
 
 
 def delete_setting(key: str, db_path: Path = DB_PATH) -> None:
+    init_db(db_path)
     with _connect(db_path) as conn:
         conn.execute("DELETE FROM settings WHERE key = ?", (key,))
 
