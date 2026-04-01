@@ -1,7 +1,6 @@
 """Todoist OAuth and shopping-list push integration."""
 
 import os
-import secrets
 
 import httpx
 from fastapi import APIRouter, HTTPException
@@ -34,8 +33,6 @@ def _client_secret() -> str:
 
 @router.get("/integrations/todoist/auth")
 async def todoist_auth():
-    state = secrets.token_urlsafe(16)
-    set_setting("todoist_oauth_state", state)
     redirect_uri = os.environ.get(
         "TODOIST_REDIRECT_URI",
         "https://shiny-enigma-production-ee0c.up.railway.app/api/integrations/todoist/callback",
@@ -44,21 +41,15 @@ async def todoist_auth():
         f"{_TODOIST_AUTH_URL}"
         f"?client_id={_client_id()}"
         f"&scope=data:read_write"
-        f"&state={state}"
         f"&redirect_uri={redirect_uri}"
     )
     return RedirectResponse(url)
 
 
 @router.get("/integrations/todoist/callback")
-async def todoist_callback(code: str = "", state: str = "", error: str = ""):
+async def todoist_callback(code: str = "", error: str = ""):
     if error:
         return RedirectResponse("/recipes?todoist=denied")
-
-    stored_state = get_setting("todoist_oauth_state")
-    if not stored_state or state != stored_state:
-        raise HTTPException(status_code=400, detail="Invalid OAuth state")
-    delete_setting("todoist_oauth_state")
 
     redirect_uri = os.environ.get(
         "TODOIST_REDIRECT_URI",
