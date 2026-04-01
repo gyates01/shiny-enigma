@@ -59,6 +59,10 @@ export const api = {
     body: JSON.stringify({ rating: rating ?? undefined, note: note || undefined }),
   }),
   exportUrl: () => `${BASE}/export`,
+  getTodoistStatus: () => request('/integrations/todoist/status'),
+  sendToTodoist: (recipeId) => request(`/recipes/${recipeId}/shopping-list`, { method: 'POST' }),
+  disconnectTodoist: () => request('/integrations/todoist/disconnect', { method: 'DELETE' }),
+  todoistAuthUrl: () => `${BASE}/integrations/todoist/auth`,
 }
 
 // Pantry

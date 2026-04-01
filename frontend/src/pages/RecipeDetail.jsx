@@ -278,6 +278,9 @@ export default function RecipeDetail() {
   const [lastCooked, setLastCooked] = useState(null)
   const [cookConfirm, setCookConfirm] = useState('')
   const [assistantOpen, setAssistantOpen] = useState(false)
+  const [todoistConnected, setTodoistConnected] = useState(null)
+  const [todoistMsg, setTodoistMsg] = useState('')
+  const [todoistLoading, setTodoistLoading] = useState(false)
 
   useEffect(() => {
     api.getRecipe(id)
@@ -293,7 +296,33 @@ export default function RecipeDetail() {
         .then(items => setPantryEmpty(items.length === 0))
         .catch(() => {})
     }
+    // Check for ?todoist=connected after OAuth redirect
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('todoist') === 'connected') {
+      setTodoistMsg('Todoist connected ✓')
+      setTimeout(() => setTodoistMsg(''), 4000)
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+    api.getTodoistStatus().then(s => setTodoistConnected(s.connected)).catch(() => {})
   }, [id])
+
+  const handleSendToTodoist = async () => {
+    if (!todoistConnected) {
+      window.open(api.todoistAuthUrl(), '_blank')
+      return
+    }
+    setTodoistLoading(true)
+    try {
+      const { sent, project_url } = await api.sendToTodoist(id)
+      setTodoistMsg(sent > 0 ? `Sent ${sent} items to Todoist ✓` : 'All ingredients already on hand')
+      if (sent > 0 && project_url) window.open(project_url, '_blank')
+    } catch (e) {
+      setTodoistMsg(`Error: ${e.message}`)
+    } finally {
+      setTodoistLoading(false)
+      setTimeout(() => setTodoistMsg(''), 4000)
+    }
+  }
 
   const handleCookSave = async (rating, note) => {
     try {
@@ -436,9 +465,13 @@ export default function RecipeDetail() {
         )}
       </div>
 
+      {(todoistMsg) && (
+        <div style={{ fontSize: 13, color: '#6ee7b7', marginBottom: 8 }}>{todoistMsg}</div>
+      )}
+
       {recipe.ingredients?.length > 0 && (
         <section style={{ marginBottom: 28 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
             <h2 style={{ fontSize: 16, fontWeight: 600 }}>Ingredients</h2>
             {hasMetricUnits(recipe.ingredients.map(i => i.text)) && (
               <button
@@ -454,6 +487,16 @@ export default function RecipeDetail() {
                 {imperial ? '⇄ Metric' : '⇄ Imperial'}
               </button>
             )}
+            <button onClick={handleSendToTodoist} disabled={todoistLoading} style={{
+              marginLeft: 'auto',
+              background: todoistConnected ? 'rgba(220,38,38,0.1)' : 'rgba(220,38,38,0.06)',
+              border: '1px solid rgba(220,38,38,0.3)',
+              color: '#f87171', borderRadius: 20, padding: '3px 12px', fontSize: 12,
+              fontWeight: 600, cursor: 'pointer', opacity: todoistLoading ? 0.6 : 1,
+              whiteSpace: 'nowrap',
+            }}>
+              {todoistLoading ? '…' : todoistConnected ? '✓ Send to Todoist' : '+ Connect Todoist'}
+            </button>
           </div>
 
           {isProd ? (

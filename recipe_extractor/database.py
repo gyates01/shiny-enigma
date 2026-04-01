@@ -64,6 +64,31 @@ def init_db(db_path: Path = DB_PATH) -> None:
         conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_cook_log_recipe ON recipe_cook_log (recipe_id)"
         )
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS settings (
+                key   TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            )
+        """)
+
+
+def get_setting(key: str, db_path: Path = DB_PATH) -> str | None:
+    with _connect(db_path) as conn:
+        row = conn.execute("SELECT value FROM settings WHERE key = ?", (key,)).fetchone()
+        return row["value"] if row else None
+
+
+def set_setting(key: str, value: str, db_path: Path = DB_PATH) -> None:
+    with _connect(db_path) as conn:
+        conn.execute(
+            "INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            (key, value),
+        )
+
+
+def delete_setting(key: str, db_path: Path = DB_PATH) -> None:
+    with _connect(db_path) as conn:
+        conn.execute("DELETE FROM settings WHERE key = ?", (key,))
 
 
 def save_recipe(recipe: dict, db_path: Path = DB_PATH) -> int:
