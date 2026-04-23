@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
+import { getCategoryAccent } from '../lib/categoryUtils'
 
 function RecipeCard({ recipe, onClick }) {
   const cuisines = recipe.cuisine ? recipe.cuisine.split(',').map(s => s.trim()).filter(Boolean) : []
@@ -29,6 +30,7 @@ function RecipeCard({ recipe, onClick }) {
         e.currentTarget.style.borderColor = 'var(--border)'
       }}
     >
+      <div style={{ height: 4, background: getCategoryAccent(categories[0]), flexShrink: 0 }} />
       {recipe.image_url ? (
         <div style={{ position: 'relative', height: 162, overflow: 'hidden' }}>
           <img src={recipe.image_url} alt=""
@@ -78,13 +80,16 @@ function RecipeCard({ recipe, onClick }) {
 
         {categories.length > 0 && (
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {categories.map(t => (
-              <span key={t} style={{
-                background: 'rgba(20,184,166,0.12)', color: '#2dd4bf',
-                border: '1px solid rgba(20,184,166,0.25)',
-                borderRadius: 20, padding: '2px 10px', fontSize: 12, fontWeight: 500,
-              }}>{t}</span>
-            ))}
+            {categories.map(t => {
+              const accent = getCategoryAccent(t)
+              return (
+                <span key={t} style={{
+                  background: `${accent}26`, color: accent,
+                  border: `1px solid ${accent}40`,
+                  borderRadius: 20, padding: '2px 10px', fontSize: 12, fontWeight: 500,
+                }}>{t}</span>
+              )
+            })}
           </div>
         )}
 
@@ -176,14 +181,30 @@ export default function RecipeList() {
         style={{ marginBottom: 12, fontSize: 14, padding: '11px 14px' }}
       />
 
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+        {['', 'Breakfast', 'Lunch', 'Dinner', 'Dessert', 'Snack'].map(cat => {
+          const isActive = filters.category === cat
+          const chipColorHex = cat ? getCategoryAccent(cat) : '#7c6af7'
+          return (
+            <button
+              key={cat}
+              onClick={() => setFilter('category', cat)}
+              style={{
+                padding: '5px 14px', borderRadius: 20,
+                border: `1px solid ${isActive ? chipColorHex : 'var(--border)'}`,
+                background: isActive ? `${chipColorHex}22` : 'transparent',
+                color: isActive ? chipColorHex : 'var(--muted)',
+                fontSize: 13, fontWeight: 500, cursor: 'pointer', whiteSpace: 'nowrap',
+              }}
+            >{cat || 'All'}</button>
+          )
+        })}
+      </div>
+
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 22, alignItems: 'center' }}>
         <select value={filters.cuisine} onChange={e => setFilter('cuisine', e.target.value)} style={filterStyle}>
           <option value="">All cuisines</option>
           {cuisines.map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
-        <select value={filters.category} onChange={e => setFilter('category', e.target.value)} style={filterStyle}>
-          <option value="">All categories</option>
-          {categories.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
         <input
           type="number" min="1" placeholder="Max time (min)"
@@ -202,12 +223,23 @@ export default function RecipeList() {
       {loading && <p className="dim" style={{ fontSize: 15 }}>Loading...</p>}
       {error && <p className="error">{error}</p>}
       {!loading && !error && recipes.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-dim)' }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>🍴</div>
-          <p style={{ fontSize: 16 }}>{query || hasFilters ? 'No recipes match your filters.' : 'No recipes yet — add your first one!'}</p>
+        <div style={{ textAlign: 'center', padding: '80px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+          {query || hasFilters ? (
+            <>
+              <span style={{ fontSize: 48 }}>🔍</span>
+              <p style={{ fontSize: 16, color: 'var(--text-dim)' }}>No recipes match your search.</p>
+              <button className="btn btn-primary" onClick={() => { setQuery(''); clearFilters() }}>Clear search</button>
+            </>
+          ) : (
+            <>
+              <span style={{ fontSize: 48 }}>🍽️</span>
+              <p style={{ fontSize: 16, color: 'var(--text-dim)' }}>Your recipe collection is empty.</p>
+              <button className="btn btn-primary" onClick={() => navigate('/add')}>Add your first recipe</button>
+            </>
+          )}
         </div>
       )}
-      <div style={{ display: 'grid', gap: 17, gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))' }}>
+      <div style={{ display: 'grid', gap: 17, gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }}>
         {recipes.map(r => (
           <RecipeCard key={r.id} recipe={r} onClick={() => navigate(`/recipes/${r.id}`)} />
         ))}
