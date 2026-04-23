@@ -27,6 +27,7 @@ export default function Nav() {
         borderBottom: '1px solid #2a2a2a',
         padding: '0 24px',
       }} className="nav-top">
+        <a href="https://hub-phi-blush.vercel.app" style={{ color: '#555', textDecoration: 'none', fontSize: 12, marginRight: 16 }}>← hub</a>
         <span style={{ fontWeight: 700, marginRight: 'auto', fontSize: 15 }}>Recipe Book</span>
         {links.map(({ to, label }) => (
           <NavLink key={to} to={to} style={({ isActive }) => ({ ...linkStyle, ...(isActive ? activeStyle : {}) })}>
