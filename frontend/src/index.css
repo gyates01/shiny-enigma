@@ -1,23 +1,48 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #0f0f0f;
-  --surface: #1a1a1a;
-  --border: #2a2a2a;
-  --accent: #7c6af7;
-  --text: #e0e0e0;
-  --text-dim: #888;
-  --danger: #e05252;
-  --nav-height-top: 56px;
+  /* ── Warm Graphite (matches Finance Tracker) ─────── */
+  --bg:      #111216;
+  --card:    #1a1c22;
+  --card2:   #20222a;
+  --border:  #272931;
+  --border2: #363940;
+  --text:    #f2f2f5;
+  --muted:   #9da0b8;
+  --dim:     #7a7e96;
+  --faint:   #55586e;
+  --sidebar: #0e0f13;
+
+  /* ── Accent (Recipe Logger purple identity) ──────── */
+  --accent:       #7c6af7;
+  --accent-light: #a78bfa;
+
+  /* ── Semantic ─────────────────────────────────────── */
+  --danger: #ef4444;
+
+  /* ── Nav heights ──────────────────────────────────── */
+  --nav-height-top:    56px;
   --nav-height-bottom: 64px;
 }
 
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: system-ui, sans-serif;
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
   min-height: 100vh;
 }
+
+a { text-decoration: none; color: inherit; }
+button { font-family: inherit; }
+input, textarea, select { font-family: inherit; }
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--card); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border2); filter: brightness(1.2); }
 
 /* Desktop: pad top for nav bar */
 #root {
@@ -48,7 +73,7 @@ body {
 
 input, textarea, select {
   width: 100%; padding: 10px 14px; border-radius: 8px;
-  border: 1px solid var(--border); background: var(--surface);
+  border: 1px solid var(--border); background: var(--card);
   color: var(--text); font-size: 15px; font-family: inherit;
 }
 input:focus, textarea:focus, select:focus {
@@ -56,7 +81,7 @@ input:focus, textarea:focus, select:focus {
 }
 textarea { resize: vertical; line-height: 1.5; }
 select { cursor: pointer; appearance: none; }
-select option { background: var(--surface); }
+select option { background: var(--card); }
 
 .error { color: var(--danger); font-size: 14px; margin-top: 8px; }
-.dim { color: var(--text-dim); font-size: 13px; }
+.dim { color: var(--muted); font-size: 13px; }
