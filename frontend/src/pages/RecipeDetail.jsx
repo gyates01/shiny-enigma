@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
+import { getCategoryAccent } from '../lib/categoryUtils'
 
 const isProd = import.meta.env.PROD
 
@@ -384,9 +385,10 @@ export default function RecipeDetail() {
 
   const hasOnHand = recipe.ingredients?.some(i => i.on_hand) ?? false
 
+  const catAccent = getCategoryAccent(recipe.category)
   const metaChips = [
-    recipe.cuisine    && { label: recipe.cuisine,                    color: '#c4b8ff', bg: 'rgba(124,106,247,0.12)', border: 'rgba(124,106,247,0.25)' },
-    recipe.category   && { label: recipe.category,                   color: '#2dd4bf', bg: 'rgba(20,184,166,0.1)',   border: 'rgba(20,184,166,0.25)'  },
+    recipe.cuisine    && { label: recipe.cuisine,   color: '#c4b8ff', bg: 'rgba(124,106,247,0.12)', border: 'rgba(124,106,247,0.25)' },
+    recipe.category   && { label: recipe.category,  color: catAccent, bg: `${catAccent}1a`,         border: `${catAccent}40`         },
     cleanServings(recipe.servings) && { label: `${cleanServings(recipe.servings)} servings`, color: 'var(--muted)', bg: 'rgba(157,160,184,0.08)', border: 'rgba(157,160,184,0.2)' },
     fmtTime(recipe.total_time)     && { label: `⏱ ${fmtTime(recipe.total_time)}`,           color: 'var(--muted)', bg: 'rgba(157,160,184,0.08)', border: 'rgba(157,160,184,0.2)' },
   ].filter(Boolean)
@@ -443,6 +445,7 @@ export default function RecipeDetail() {
           position: 'sticky', top: 'var(--nav-height-top)', zIndex: 0,
           borderRadius: '12px 12px 0 0', overflow: 'hidden', marginTop: 8,
         }}>
+          <div style={{ height: 4, background: getCategoryAccent(recipe.category) }} />
           <img src={recipe.image_url} alt={recipe.title}
             style={{ width: '100%', display: 'block' }} />
           <div style={{
