@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { api } from '../lib/api'
+import { getCategoryAccent, CUISINE_PALETTE } from '../lib/categoryUtils'
 
 function fmtTime(mins) {
   if (!mins) return '—'
@@ -54,7 +55,7 @@ function BarRow({ label, count, max, color }) {
   )
 }
 
-function BreakdownSection({ title, rows, labelKey, countKey, color }) {
+function BreakdownSection({ title, rows, labelKey, countKey, getRowColor }) {
   if (!rows?.length) return null
   const max = rows[0]?.[countKey] ?? 1
   return (
@@ -62,10 +63,10 @@ function BreakdownSection({ title, rows, labelKey, countKey, color }) {
       background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12,
       padding: '16px 18px', marginBottom: 12, overflow: 'hidden',
     }}>
-      <div style={{ height: 4, margin: '-16px -18px 14px', borderRadius: '12px 12px 0 0', background: color }} />
+      <div style={{ height: 4, margin: '-16px -18px 14px', borderRadius: '12px 12px 0 0', background: 'var(--border)' }} />
       <h2 style={{ fontSize: 12, fontWeight: 600, color: 'var(--dim)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 14 }}>{title}</h2>
-      {rows.map(row => (
-        <BarRow key={row[labelKey]} label={row[labelKey]} count={row[countKey]} max={max} color={color} />
+      {rows.map((row, i) => (
+        <BarRow key={row[labelKey]} label={row[labelKey]} count={row[countKey]} max={max} color={getRowColor(row, i)} />
       ))}
     </div>
   )
@@ -96,7 +97,7 @@ export default function Stats() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 10, marginBottom: 20, maxWidth: 600, margin: '0 auto 20px' }}>
         <StatTile label="Recipes"    value={stats.total}                                             accent="var(--accent)" />
-        <StatTile label="Avg calories" value={stats.avg_calories ? `${stats.avg_calories}` : null}  sub="kcal" accent="#2dd4bf" />
+        <StatTile label="Avg calories" value={stats.avg_calories ? `${stats.avg_calories}` : null}  sub="kcal" accent="#0ea5e9" />
         <StatTile label="Avg cook time" value={fmtTime(stats.avg_total_time_min)}                    accent="#f59e0b" />
         <StatTile label="Total cooks" value={stats.total_cooks || 0}                                 accent="var(--accent-light)" />
       </div>
@@ -127,8 +128,10 @@ export default function Stats() {
       )}
 
       <div style={{ maxWidth: 600, margin: '0 auto' }}>
-        <BreakdownSection title="By Cuisine"  rows={stats.by_cuisine}  labelKey="cuisine"  countKey="cnt" color="var(--accent)" />
-        <BreakdownSection title="By Category" rows={stats.by_category} labelKey="category" countKey="cnt" color="#2dd4bf" />
+        <BreakdownSection title="By Cuisine"  rows={stats.by_cuisine}  labelKey="cuisine"  countKey="cnt"
+          getRowColor={(_, i) => CUISINE_PALETTE[i % CUISINE_PALETTE.length]} />
+        <BreakdownSection title="By Category" rows={stats.by_category} labelKey="category" countKey="cnt"
+          getRowColor={(row) => getCategoryAccent(row.category)} />
       </div>
     </div>
   )
