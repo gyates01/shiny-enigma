@@ -150,7 +150,14 @@ export default function EditRecipe() {
               <input value={form.cuisine} onChange={e => set('cuisine', e.target.value)} />
             </div>
             <div style={{ flex: 1 }}>{label('Category')}
-              <input value={form.category} onChange={e => set('category', e.target.value)} />
+              <select value={form.category} onChange={e => set('category', e.target.value)}>
+                <option value="">Uncategorized</option>
+                <option value="Breakfast">Breakfast</option>
+                <option value="Lunch">Lunch</option>
+                <option value="Dinner">Dinner</option>
+                <option value="Dessert">Dessert</option>
+                <option value="Snack">Snack</option>
+              </select>
             </div>
           </div>
           <div style={{ marginBottom: 0 }}>{label('Tags (comma-separated)')}
