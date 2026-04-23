@@ -20,6 +20,18 @@
   /* ── Semantic ─────────────────────────────────────── */
   --danger: #ef4444;
 
+  /* ── Aliases (fix broken --surface / --text-dim refs) ──── */
+  --surface:  #1a1c22;
+  --text-dim: #9da0b8;
+
+  /* ── Category accents ─────────────────────────────────── */
+  --accent-breakfast: #f59e0b;
+  --accent-lunch:     #22c55e;
+  --accent-dinner:    #7c6af7;
+  --accent-dessert:   #f43f5e;
+  --accent-snack:     #0ea5e9;
+  --accent-default:   #7a7e96;
+
   /* ── Nav heights ──────────────────────────────────── */
   --nav-height-top:    56px;
   --nav-height-bottom: 64px;
