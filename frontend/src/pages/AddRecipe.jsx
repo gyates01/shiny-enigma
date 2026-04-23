@@ -32,7 +32,7 @@ export default function AddRecipe() {
     <div className="page" style={{ maxWidth: 560 }}>
       <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 24 }}>Add Recipe</h1>
 
-      <label style={{ display: 'block', marginBottom: 8, fontSize: 14, color: '#888' }}>
+      <label style={{ display: 'block', marginBottom: 8, fontSize: 14, color: 'var(--muted)' }}>
         Recipe URL
       </label>
       <input
@@ -79,17 +79,17 @@ export default function AddRecipe() {
 
       {saved && (
         <div style={{
-          marginTop: 20, padding: 16, background: '#1a2a1a',
-          border: '1px solid #2a4a2a', borderRadius: 10,
+          marginTop: 20, padding: 16, background: 'rgba(34,197,94,0.08)',
+          border: '1px solid rgba(34,197,94,0.2)', borderRadius: 10,
         }}>
-          <p style={{ color: '#6fcf6f', fontWeight: 600, marginBottom: 10 }}>
+          <p style={{ color: '#22c55e', fontWeight: 600, marginBottom: 10 }}>
             Saved: {saved.title}
           </p>
           <div style={{ display: 'flex', gap: 10 }}>
             <button className="btn btn-primary" onClick={() => navigate(`/recipes/${saved.id}`)}>
               View Recipe
             </button>
-            <button className="btn" style={{ background: '#2a2a2a', color: '#ccc' }}
+            <button className="btn" style={{ background: 'var(--card2)', color: 'var(--muted)' }}
               onClick={() => setSaved(null)}>
               Add Another
             </button>
