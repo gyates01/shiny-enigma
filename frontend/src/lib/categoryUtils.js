@@ -4,6 +4,7 @@ const CATEGORY_ACCENTS = {
   dinner:    '#7c6af7',
   dessert:   '#f43f5e',
   snack:     '#0ea5e9',
+  side:      '#f97316',
 }
 
 export const CUISINE_PALETTE = ['#f59e0b', '#22c55e', '#0ea5e9', '#f43f5e', '#a78bfa']

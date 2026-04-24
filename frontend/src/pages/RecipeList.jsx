@@ -182,7 +182,7 @@ export default function RecipeList() {
       />
 
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
-        {['', 'Breakfast', 'Lunch', 'Dinner', 'Dessert', 'Snack'].map(cat => {
+        {['', 'Breakfast', 'Lunch', 'Dinner', 'Dessert', 'Snack', 'Side'].map(cat => {
           const isActive = filters.category === cat
           const chipColorHex = cat ? getCategoryAccent(cat) : '#7c6af7'
           return (

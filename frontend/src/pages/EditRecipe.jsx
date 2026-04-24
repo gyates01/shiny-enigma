@@ -157,6 +157,7 @@ export default function EditRecipe() {
                 <option value="Dinner">Dinner</option>
                 <option value="Dessert">Dessert</option>
                 <option value="Snack">Snack</option>
+                <option value="Side">Side</option>
               </select>
             </div>
           </div>
