@@ -240,7 +240,7 @@ export default function EditRecipe() {
                       .catch(() => {})
                   }}
                   style={{
-                    background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer',
+                    background: 'none', border: 'none', color: 'var(--dim)', cursor: 'pointer',
                     fontSize: 16, padding: '0 4px', marginLeft: 12, flexShrink: 0,
                   }}
                   title="Remove this entry"

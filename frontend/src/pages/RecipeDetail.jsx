@@ -96,8 +96,8 @@ function TodoistPickCircle({ index, picked, onToggle }) {
   return (
     <span onClick={e => onToggle(index, e)} style={{
       width: 16, height: 16, borderRadius: '50%', flexShrink: 0,
-      border: `2px solid ${picked ? '#f87171' : 'var(--border2)'}`,
-      background: picked ? '#f87171' : 'transparent',
+      border: `2px solid ${picked ? 'var(--danger-text)' : 'var(--border2)'}`,
+      background: picked ? 'var(--danger-text)' : 'transparent',
       cursor: 'pointer', display: 'flex', alignItems: 'center',
       justifyContent: 'center', fontSize: 9, color: '#fff',
     }}>{picked && '✓'}</span>
@@ -128,23 +128,24 @@ function RecipeAssistant({ recipeId, open, onClose }) {
   if (!open) return null
 
   return (
-    <div style={{
+    <div className="recipe-assistant" style={{
       position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 900,
       display: 'flex', justifyContent: 'center', padding: '0 16px 16px',
       pointerEvents: 'none',
     }}>
       <div style={{
         width: '100%', maxWidth: 560, background: 'var(--card)',
-        border: '1px solid var(--border)', borderRadius: '16px 16px 12px 12px',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--card-radius-lg) var(--card-radius-lg) var(--card-radius) var(--card-radius)',
         boxShadow: '0 -8px 40px rgba(0,0,0,0.6)', pointerEvents: 'all',
         display: 'flex', flexDirection: 'column', maxHeight: '60vh',
       }}>
         {/* Header */}
         <div style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          padding: '12px 16px', borderBottom: '1px solid #1f2937', flexShrink: 0,
+          padding: '12px 16px', borderBottom: '1px solid var(--border2)', flexShrink: 0,
         }}>
-          <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--accent-light)' }}>✦ Recipe Assistant</span>
+          <span style={{ fontSize: 'var(--text-lg)', fontWeight: 600, color: 'var(--accent-light)' }}>✦ Recipe Assistant</span>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--dim)', cursor: 'pointer', fontSize: 18 }}>×</button>
         </div>
 
@@ -158,14 +159,14 @@ function RecipeAssistant({ recipeId, open, onClose }) {
                 background: m.role === 'user' ? 'rgba(124,106,247,0.2)' : 'var(--card2)',
                 border: `1px solid ${m.role === 'user' ? 'rgba(124,106,247,0.35)' : 'var(--border2)'}`,
                 borderRadius: m.role === 'user' ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
-                padding: '8px 12px', fontSize: 13, lineHeight: 1.5, color: 'var(--text)',
+                padding: '8px 12px', fontSize: 'var(--text-md)', lineHeight: 1.5, color: 'var(--text)',
                 whiteSpace: 'pre-wrap',
               }}>{m.text}</div>
             ))}
             {loading && (
               <div style={{
                 alignSelf: 'flex-start', background: 'var(--card2)', border: '1px solid var(--border2)',
-                borderRadius: '12px 12px 12px 4px', padding: '8px 12px', fontSize: 13, color: 'var(--dim)',
+                borderRadius: '12px 12px 12px 4px', padding: '8px 12px', fontSize: 'var(--text-md)', color: 'var(--dim)',
               }}>Thinking…</div>
             )}
           </div>
@@ -177,7 +178,7 @@ function RecipeAssistant({ recipeId, open, onClose }) {
             {QUICK_PROMPTS.map(p => (
               <button key={p.label} onClick={() => send(p.q)} style={{
                 background: 'rgba(124,106,247,0.1)', border: '1px solid rgba(124,106,247,0.25)',
-                color: 'var(--accent-light)', borderRadius: 20, padding: '5px 12px', fontSize: 12,
+                color: 'var(--accent-light)', borderRadius: 20, padding: '5px 12px', fontSize: 'var(--text-sm)',
                 cursor: 'pointer', fontWeight: 500,
               }}>{p.label}</button>
             ))}
@@ -194,12 +195,12 @@ function RecipeAssistant({ recipeId, open, onClose }) {
             disabled={loading}
             style={{
               flex: 1, background: 'var(--card2)', border: '1px solid var(--border2)',
-              borderRadius: 8, padding: '8px 12px', color: 'var(--text)', fontSize: 13,
+              borderRadius: 8, padding: '8px 12px', color: 'var(--text)', fontSize: 'var(--text-md)',
             }}
           />
           <button onClick={() => send(input)} disabled={loading || !input.trim()} style={{
             background: 'var(--accent)', border: 'none', color: '#fff', borderRadius: 8,
-            padding: '8px 14px', fontSize: 13, cursor: 'pointer', fontWeight: 600,
+            padding: '8px 14px', fontSize: 'var(--text-md)', cursor: 'pointer', fontWeight: 600,
             opacity: loading || !input.trim() ? 0.5 : 1,
           }}>↑</button>
         </div>
@@ -226,8 +227,8 @@ function MadeItModal({ onSave, onCancel }) {
       padding: 20,
     }} onClick={e => { if (e.target === e.currentTarget) onCancel() }}>
       <div style={{
-        background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16,
-        padding: 28, width: '100%', maxWidth: 360,
+        background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--card-radius-lg)',
+        padding: 'var(--space-7)', width: '100%', maxWidth: 360,
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <h2 style={{ margin: 0, fontSize: 17, fontWeight: 600 }}>Log this cook</h2>
@@ -255,7 +256,7 @@ function MadeItModal({ onSave, onCancel }) {
           rows={3}
           style={{
             width: '100%', background: 'var(--card2)', border: '1px solid var(--border2)',
-            borderRadius: 8, padding: '8px 12px', color: 'var(--text)', fontSize: 13,
+            borderRadius: 8, padding: '8px 12px', color: 'var(--text)', fontSize: 'var(--text-md)',
             resize: 'vertical', boxSizing: 'border-box',
           }}
         />
@@ -263,12 +264,12 @@ function MadeItModal({ onSave, onCancel }) {
         <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
           <button onClick={() => submit(false)} disabled={saving} style={{
             flex: 1, background: 'var(--accent)', border: 'none', color: '#fff',
-            borderRadius: 8, padding: '10px 0', fontSize: 14, cursor: 'pointer',
+            borderRadius: 8, padding: '10px 0', fontSize: 'var(--text-lg)', cursor: 'pointer',
             opacity: saving ? 0.6 : 1, fontWeight: 600,
           }}>Save</button>
           <button onClick={() => submit(true)} disabled={saving} style={{
             flex: 1, background: 'var(--card2)', border: '1px solid var(--border2)', color: 'var(--muted)',
-            borderRadius: 8, padding: '10px 0', fontSize: 14, cursor: 'pointer',
+            borderRadius: 8, padding: '10px 0', fontSize: 'var(--text-lg)', cursor: 'pointer',
             opacity: saving ? 0.6 : 1,
           }}>Skip</button>
         </div>
@@ -404,40 +405,40 @@ export default function RecipeDetail() {
     <>
     <div className="page" style={recipe.image_url ? { paddingBottom: 0 } : undefined}>
       <button onClick={() => navigate('/recipes')} style={{
-        background: 'none', border: 'none', color: '#888', cursor: 'pointer',
-        marginBottom: 16, fontSize: 14,
+        background: 'none', border: 'none', color: 'var(--dim)', cursor: 'pointer',
+        marginBottom: 'var(--space-4)', fontSize: 'var(--text-lg)',
       }}>← Back</button>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+      <div className="recipe-header">
         <h1 style={{ fontSize: 22, fontWeight: 700, flex: 1 }}>{recipe.title}</h1>
-        <div style={{ display: 'flex', gap: 8, marginLeft: 16, flexShrink: 0 }}>
+        <div className="recipe-actions">
           <button onClick={() => setAssistantOpen(o => !o)} style={{
             background: assistantOpen ? 'rgba(124,106,247,0.2)' : 'rgba(124,106,247,0.08)',
             border: '1px solid rgba(124,106,247,0.35)',
-            color: 'var(--accent-light)', cursor: 'pointer', borderRadius: 6, padding: '6px 14px', fontSize: 13, fontWeight: 500,
+            color: 'var(--accent-light)', cursor: 'pointer', borderRadius: 6, padding: '6px 14px', fontSize: 'var(--text-md)', fontWeight: 500,
           }}>✦ Ask</button>
           <button onClick={() => setCookModal(true)} style={{
             background: 'rgba(124,106,247,0.12)', border: '1px solid rgba(124,106,247,0.35)',
-            color: 'var(--accent-light)', cursor: 'pointer', borderRadius: 6, padding: '6px 14px', fontSize: 13, fontWeight: 500,
+            color: 'var(--accent-light)', cursor: 'pointer', borderRadius: 6, padding: '6px 14px', fontSize: 'var(--text-md)', fontWeight: 500,
           }}>✓ Made it</button>
           <button onClick={() => navigate(`/recipes/${id}/edit`)} style={{
             background: 'none', border: '1px solid var(--border2)', color: 'var(--muted)', cursor: 'pointer',
-            borderRadius: 6, padding: '6px 14px', fontSize: 13,
+            borderRadius: 6, padding: '6px 14px', fontSize: 'var(--text-md)',
           }}>Edit</button>
           <button onClick={handleDelete} disabled={deleting} style={{
-            background: 'none', border: '1px solid #7f1d1d', color: '#f87171', cursor: 'pointer',
-            borderRadius: 6, padding: '6px 14px', fontSize: 13, opacity: deleting ? 0.5 : 1,
+            background: 'none', border: '1px solid var(--danger-bg)', color: '#f87171', cursor: 'pointer',
+            borderRadius: 6, padding: '6px 14px', fontSize: 'var(--text-md)', opacity: deleting ? 0.5 : 1,
           }}>{deleting ? '...' : 'Delete'}</button>
         </div>
       </div>
 
       {cookCount > 0 && (
-        <div style={{ fontSize: 13, color: 'var(--dim)', marginBottom: 4 }}>
+        <div style={{ fontSize: 'var(--text-md)', color: 'var(--dim)', marginBottom: 'var(--space-1)' }}>
           Made {cookCount}× · last {new Date(lastCooked).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
         </div>
       )}
       {cookConfirm && (
-        <div style={{ fontSize: 13, color: '#6ee7b7', marginBottom: 4 }}>{cookConfirm}</div>
+        <div style={{ fontSize: 'var(--text-md)', color: 'var(--success)', marginBottom: 'var(--space-1)' }}>{cookConfirm}</div>
       )}
 
       {recipe.image_url && (
@@ -463,7 +464,7 @@ export default function RecipeDetail() {
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '0 0 24px' }}>
         {recipe.source_url && (
           <a href={recipe.source_url} target="_blank" rel="noreferrer"
-             style={{ color: 'var(--dim)', fontSize: 12, wordBreak: 'break-all', marginBottom: metaChips.length ? 12 : 0, textAlign: 'center' }}>
+             style={{ color: 'var(--dim)', fontSize: 'var(--text-sm)', wordBreak: 'break-all', marginBottom: metaChips.length ? 12 : 0, textAlign: 'center' }}>
             {recipe.source_url}
           </a>
         )}
@@ -473,7 +474,7 @@ export default function RecipeDetail() {
             {metaChips.map(c => (
               <span key={c.label} style={{
                 background: c.bg, border: `1px solid ${c.border}`, color: c.color,
-                borderRadius: 20, padding: '4px 12px', fontSize: 12, fontWeight: 500,
+                borderRadius: 20, padding: '4px 12px', fontSize: 'var(--text-sm)', fontWeight: 500,
               }}>{c.label}</span>
             ))}
           </div>
@@ -483,12 +484,12 @@ export default function RecipeDetail() {
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', marginTop: 4, width: '100%', maxWidth: 380 }}>
             {nutritionCards.map(n => (
               <div key={n.label} style={{
-                background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10,
+                background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--card-radius)',
                 padding: '10px 14px', textAlign: 'center', flex: '1 0 70px',
               }}>
-                <div style={{ fontSize: 11, color: 'var(--dim)', fontWeight: 500, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{n.label}</div>
+                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--dim)', fontWeight: 500, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{n.label}</div>
                 <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', lineHeight: 1 }}>{n.value}</div>
-                <div style={{ fontSize: 11, color: 'var(--faint)', marginTop: 2 }}>{n.unit}</div>
+                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--faint)', marginTop: 2 }}>{n.unit}</div>
               </div>
             ))}
           </div>
@@ -496,11 +497,11 @@ export default function RecipeDetail() {
       </div>
 
       {todoistMsg && (
-        <div style={{ fontSize: 13, color: todoistLoading ? 'var(--dim)' : '#6ee7b7', marginBottom: 8 }}>{todoistMsg}</div>
+        <div style={{ fontSize: 'var(--text-md)', color: todoistLoading ? 'var(--dim)' : 'var(--success)', marginBottom: 'var(--space-2)' }}>{todoistMsg}</div>
       )}
 
       {recipe.ingredients?.length > 0 && (
-        <section style={{ marginBottom: 28 }}>
+        <section style={{ marginBottom: 'var(--space-7)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
             <h2 style={{ fontSize: 16, fontWeight: 600 }}>Ingredients</h2>
             {hasMetricUnits(recipe.ingredients.map(i => i.text)) && (
@@ -510,7 +511,7 @@ export default function RecipeDetail() {
                   background: imperial ? 'var(--accent)' : 'transparent',
                   border: '1px solid var(--accent)',
                   color: imperial ? '#fff' : 'var(--accent)',
-                  borderRadius: 20, padding: '3px 12px', fontSize: 12,
+                  borderRadius: 20, padding: '3px 12px', fontSize: 'var(--text-sm)',
                   fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s',
                 }}
               >
@@ -521,7 +522,7 @@ export default function RecipeDetail() {
               marginLeft: 'auto',
               background: todoistConnected ? 'rgba(220,38,38,0.1)' : 'rgba(220,38,38,0.06)',
               border: '1px solid rgba(220,38,38,0.3)',
-              color: '#f87171', borderRadius: 20, padding: '3px 12px', fontSize: 12,
+              color: 'var(--danger-text)', borderRadius: 20, padding: '3px 12px', fontSize: 'var(--text-sm)',
               fontWeight: 600, cursor: 'pointer', opacity: todoistLoading ? 0.6 : 1,
               whiteSpace: 'nowrap',
             }}>
@@ -541,7 +542,7 @@ export default function RecipeDetail() {
                   onKeyDown={e => (e.key === ' ' || e.key === 'Enter') && toggleCheck(i)}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 10,
-                    padding: '8px 0', borderBottom: '1px solid var(--border)', cursor: 'pointer',
+                    padding: '10px 0', borderBottom: '1px solid var(--border)', cursor: 'pointer',
                   }}
                 >
                   <span style={{
@@ -549,13 +550,13 @@ export default function RecipeDetail() {
                     borderColor: checked[i] ? 'var(--accent)' : 'var(--border2)',
                     background: checked[i] ? 'var(--accent)' : 'transparent',
                     flexShrink: 0, display: 'flex', alignItems: 'center',
-                    justifyContent: 'center', fontSize: 11, color: '#fff',
+                    justifyContent: 'center', fontSize: 'var(--text-xs)', color: '#fff',
                   }}>
                     {checked[i] && '✓'}
                   </span>
                   <span style={{
                     flex: 1,
-                    fontSize: 14,
+                    fontSize: 'var(--text-lg)',
                     color: checked[i] ? 'var(--faint)' : 'var(--text)',
                     textDecoration: checked[i] ? 'line-through' : 'none',
                   }}>
@@ -569,30 +570,30 @@ export default function RecipeDetail() {
             // Dev: pantry on-hand sections with checklist rows
             <>
               {pantryEmpty && (
-                <p style={{ fontSize: 13, color: 'var(--dim)', marginBottom: 8 }}>
+                <p style={{ fontSize: 'var(--text-md)', color: 'var(--dim)', marginBottom: 'var(--space-2)' }}>
                   Add items to your pantry to see what you have on hand.
                 </p>
               )}
 
               {hasOnHand && (
                 <div style={{ marginBottom: 12 }}>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--dim)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 6 }}>On hand</div>
+                  <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--dim)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 6 }}>On hand</div>
                   {recipe.ingredients.map((ing, i) => !ing.on_hand ? null : (
                     <div key={i} onClick={() => toggleCheck(i)}
                       role="checkbox" tabIndex={0} aria-checked={!!checked[i]}
                       onKeyDown={e => (e.key === ' ' || e.key === 'Enter') && toggleCheck(i)}
                       style={{
                         display: 'flex', alignItems: 'center', gap: 10,
-                        padding: '8px 0', borderBottom: '1px solid var(--border)',
-                        borderLeft: '3px solid #22c55e', paddingLeft: 10, cursor: 'pointer',
+                        padding: '10px 0', borderBottom: '1px solid var(--border)',
+                        borderLeft: '3px solid var(--success)', paddingLeft: 10, cursor: 'pointer',
                       }}
                     >
                       <span style={{
                         width: 18, height: 18, borderRadius: 4, border: '2px solid',
-                        borderColor: checked[i] ? '#7c6af7' : '#444',
-                        background: checked[i] ? '#7c6af7' : 'transparent',
+                        borderColor: checked[i] ? 'var(--accent)' : 'var(--border2)',
+                        background: checked[i] ? 'var(--accent)' : 'transparent',
                         flexShrink: 0, display: 'flex', alignItems: 'center',
-                        justifyContent: 'center', fontSize: 11, color: '#fff',
+                        justifyContent: 'center', fontSize: 'var(--text-xs)', color: '#fff',
                       }}>
                         {checked[i] && '✓'}
                       </span>
@@ -606,9 +607,9 @@ export default function RecipeDetail() {
                       </span>
                       {ing.stock_mode === 'level' && ing.stock_value && (
                         <span style={{
-                          background: ing.stock_value === 'full' ? '#14532d' : ing.stock_value === 'med' ? '#451a03' : '#450a0a',
-                          color:      ing.stock_value === 'full' ? '#86efac' : ing.stock_value === 'med' ? '#fcd34d' : '#fca5a5',
-                          borderRadius: 6, padding: '1px 7px', fontSize: 11, fontWeight: 600,
+                          background: ing.stock_value === 'full' ? 'var(--success-bg)' : ing.stock_value === 'med' ? 'var(--warning-bg)' : 'var(--danger-bg)',
+                          color:      ing.stock_value === 'full' ? 'var(--success-text)' : ing.stock_value === 'med' ? 'var(--warning-text)' : 'var(--danger-text)',
+                          borderRadius: 6, padding: '1px 7px', fontSize: 'var(--text-xs)', fontWeight: 600,
                           whiteSpace: 'nowrap', flexShrink: 0,
                         }}>{ing.stock_value}</span>
                       )}
@@ -640,7 +641,7 @@ export default function RecipeDetail() {
               {recipe.ingredients.some(i => !i.on_hand) && (
                 <div style={{ marginBottom: 12 }}>
                   {hasOnHand && (
-                    <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--dim)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 6 }}>Still need</div>
+                    <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--dim)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 6 }}>Still need</div>
                   )}
                   {recipe.ingredients.map((ing, i) => ing.on_hand ? null : (
                     <div key={i} onClick={() => toggleCheck(i)}
@@ -648,18 +649,18 @@ export default function RecipeDetail() {
                       onKeyDown={e => (e.key === ' ' || e.key === 'Enter') && toggleCheck(i)}
                       style={{
                         display: 'flex', alignItems: 'center', gap: 10,
-                        padding: '8px 0', borderBottom: '1px solid var(--border)',
-                        borderLeft: hasOnHand ? '3px solid #ef4444' : 'none',
+                        padding: '10px 0', borderBottom: '1px solid var(--border)',
+                        borderLeft: hasOnHand ? '3px solid var(--danger)' : 'none',
                         paddingLeft: hasOnHand ? 10 : 0,
                         cursor: 'pointer',
                       }}
                     >
                       <span style={{
                         width: 18, height: 18, borderRadius: 4, border: '2px solid',
-                        borderColor: checked[i] ? '#7c6af7' : '#444',
-                        background: checked[i] ? '#7c6af7' : 'transparent',
+                        borderColor: checked[i] ? 'var(--accent)' : 'var(--border2)',
+                        background: checked[i] ? 'var(--accent)' : 'transparent',
                         flexShrink: 0, display: 'flex', alignItems: 'center',
-                        justifyContent: 'center', fontSize: 11, color: '#fff',
+                        justifyContent: 'center', fontSize: 'var(--text-xs)', color: '#fff',
                       }}>
                         {checked[i] && '✓'}
                       </span>
@@ -692,14 +693,14 @@ export default function RecipeDetail() {
       )}
 
       {recipe.instructions?.length > 0 && (
-        <section style={{ marginBottom: 32 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Instructions</h2>
+        <section style={{ marginBottom: 'var(--space-8)' }}>
+          <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 'var(--space-3)' }}>Instructions</h2>
           {recipe.instructions.map((step, i) => (
             <div key={i} style={{ display: 'flex', gap: 16, marginBottom: 16, alignItems: 'flex-start' }}>
               <span style={{
                 background: 'var(--accent)', color: '#fff', borderRadius: '50%',
                 width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 12, fontWeight: 700, flexShrink: 0,
+                fontSize: 'var(--text-sm)', fontWeight: 700, flexShrink: 0,
               }}>{i + 1}</span>
               <p style={{ lineHeight: 1.6, paddingTop: 3 }}>{step}</p>
             </div>

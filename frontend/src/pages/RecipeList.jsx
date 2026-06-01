@@ -14,20 +14,10 @@ function RecipeCard({ recipe, onClick }) {
   return (
     <div
       onClick={onClick}
+      className="recipe-card"
       style={{
-        background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16,
+        background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--card-radius-lg)',
         cursor: 'pointer', overflow: 'hidden', display: 'flex', flexDirection: 'column',
-        transition: 'transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease',
-      }}
-      onMouseEnter={e => {
-        e.currentTarget.style.transform = 'translateY(-4px)'
-        e.currentTarget.style.boxShadow = '0 12px 32px rgba(124,106,247,0.18)'
-        e.currentTarget.style.borderColor = 'var(--accent)'
-      }}
-      onMouseLeave={e => {
-        e.currentTarget.style.transform = 'translateY(0)'
-        e.currentTarget.style.boxShadow = 'none'
-        e.currentTarget.style.borderColor = 'var(--border)'
       }}
     >
       <div style={{ height: 4, background: getCategoryAccent(categories[0]), flexShrink: 0 }} />
@@ -44,8 +34,8 @@ function RecipeCard({ recipe, onClick }) {
               {cuisines.map(t => (
                 <span key={t} style={{
                   background: 'rgba(20,10,40,0.72)', backdropFilter: 'blur(6px)',
-                  color: '#c4b8ff', border: '1px solid rgba(124,106,247,0.35)',
-                  borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600,
+                  color: 'var(--accent-light)', border: '1px solid rgba(124,106,247,0.35)',
+                  borderRadius: 20, padding: '3px 10px', fontSize: 'var(--text-xs)', fontWeight: 600,
                 }}>{t}</span>
               ))}
             </div>
@@ -64,8 +54,8 @@ function RecipeCard({ recipe, onClick }) {
               {cuisines.map(t => (
                 <span key={t} style={{
                   background: 'rgba(20,10,40,0.72)', backdropFilter: 'blur(6px)',
-                  color: '#c4b8ff', border: '1px solid rgba(124,106,247,0.35)',
-                  borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600,
+                  color: 'var(--accent-light)', border: '1px solid rgba(124,106,247,0.35)',
+                  borderRadius: 20, padding: '3px 10px', fontSize: 'var(--text-xs)', fontWeight: 600,
                 }}>{t}</span>
               ))}
             </div>
@@ -73,7 +63,7 @@ function RecipeCard({ recipe, onClick }) {
         </div>
       )}
 
-      <div style={{ padding: '12px 14px 14px', flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ padding: 'var(--space-3) var(--space-3) var(--space-3)', flex: 1, display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
         <div style={{ fontWeight: 700, fontSize: 16, lineHeight: 1.3, color: 'var(--text)' }}>
           {recipe.title}
         </div>
@@ -86,7 +76,7 @@ function RecipeCard({ recipe, onClick }) {
                 <span key={t} style={{
                   background: `${accent}26`, color: accent,
                   border: `1px solid ${accent}40`,
-                  borderRadius: 20, padding: '2px 10px', fontSize: 12, fontWeight: 500,
+                  borderRadius: 20, padding: '2px 10px', fontSize: 'var(--text-sm)', fontWeight: 500,
                 }}>{t}</span>
               )
             })}
@@ -95,7 +85,7 @@ function RecipeCard({ recipe, onClick }) {
 
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 'auto', flexWrap: 'wrap' }}>
           {meta.length > 0 && (
-            <div style={{ display: 'flex', gap: 14, color: 'var(--text-dim)', fontSize: 13 }}>
+            <div style={{ display: 'flex', gap: 14, color: 'var(--text-dim)', fontSize: 'var(--text-md)'}}>
               {meta.map(m => <span key={m}>{m}</span>)}
             </div>
           )}
@@ -103,7 +93,7 @@ function RecipeCard({ recipe, onClick }) {
             <span style={{
               marginLeft: 'auto', background: 'rgba(124,106,247,0.12)',
               border: '1px solid rgba(124,106,247,0.25)', color: '#a78bfa',
-              borderRadius: 20, padding: '2px 9px', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap',
+              borderRadius: 20, padding: '2px 9px', fontSize: 'var(--text-xs)', fontWeight: 600, whiteSpace: 'nowrap',
             }}>Made {recipe.cook_count}×</span>
           )}
         </div>
@@ -164,10 +154,10 @@ export default function RecipeList() {
 
   return (
     <div className="page" style={{ maxWidth: 1100 }}>
-      <h1 style={{ fontSize: 26, fontWeight: 800, marginBottom: 17, letterSpacing: '-0.5px' }}>
+      <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 800, marginBottom: 17, letterSpacing: '-0.5px' }}>
         My Recipes
         {!loading && recipes.length > 0 && (
-          <span style={{ fontSize: 15, fontWeight: 400, color: 'var(--text-dim)', marginLeft: 12 }}>
+          <span style={{ fontSize: 15, fontWeight: 400, color: 'var(--text-dim)', marginLeft: 'var(--space-3)' }}>
             {recipes.length}
           </span>
         )}
@@ -178,13 +168,13 @@ export default function RecipeList() {
         placeholder="🔍  Search by name, ingredient, cuisine..."
         value={query}
         onChange={e => setQuery(e.target.value)}
-        style={{ marginBottom: 12, fontSize: 14, padding: '11px 14px' }}
+        style={{ marginBottom: 'var(--space-3)', fontSize: 'var(--text-lg)', padding: '11px 14px' }}
       />
 
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
         {['', 'Breakfast', 'Lunch', 'Dinner', 'Dessert', 'Snack', 'Side'].map(cat => {
           const isActive = filters.category === cat
-          const chipColorHex = cat ? getCategoryAccent(cat) : '#7c6af7'
+          const chipColorHex = cat ? getCategoryAccent(cat) : 'var(--accent)'
           return (
             <button
               key={cat}
@@ -194,14 +184,14 @@ export default function RecipeList() {
                 border: `1px solid ${isActive ? chipColorHex : 'var(--border)'}`,
                 background: isActive ? `${chipColorHex}22` : 'transparent',
                 color: isActive ? chipColorHex : 'var(--muted)',
-                fontSize: 13, fontWeight: 500, cursor: 'pointer', whiteSpace: 'nowrap',
+                fontSize: 'var(--text-md)', fontWeight: 500, cursor: 'pointer', whiteSpace: 'nowrap',
               }}
             >{cat || 'All'}</button>
           )
         })}
       </div>
 
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 22, alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', marginBottom: 22, alignItems: 'center' }}>
         <select value={filters.cuisine} onChange={e => setFilter('cuisine', e.target.value)} style={filterStyle}>
           <option value="">All cuisines</option>
           {cuisines.map(c => <option key={c} value={c}>{c}</option>)}
@@ -220,7 +210,7 @@ export default function RecipeList() {
         )}
       </div>
 
-      {loading && <p className="dim" style={{ fontSize: 15 }}>Loading...</p>}
+      {loading && <p className="dim" style={{ fontSize: 15 }} aria-live="polite">Loading...</p>}
       {error && <p className="error">{error}</p>}
       {!loading && !error && recipes.length === 0 && (
         <div style={{ textAlign: 'center', padding: '80px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>

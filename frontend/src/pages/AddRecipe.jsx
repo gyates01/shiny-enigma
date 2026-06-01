@@ -30,9 +30,9 @@ export default function AddRecipe() {
 
   return (
     <div className="page" style={{ maxWidth: 560 }}>
-      <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 24 }}>Add Recipe</h1>
+      <h1 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, marginBottom: 'var(--space-6)' }}>Add Recipe</h1>
 
-      <label style={{ display: 'block', marginBottom: 8, fontSize: 14, color: 'var(--muted)' }}>
+      <label style={{ display: 'block', marginBottom: 'var(--space-2)', fontSize: 'var(--text-lg)', color: 'var(--muted)' }}>
         Recipe URL
       </label>
       <input
@@ -42,7 +42,7 @@ export default function AddRecipe() {
         onChange={e => setUrl(e.target.value)}
         onKeyDown={e => e.key === 'Enter' && !loading && handleAdd()}
         disabled={loading}
-        style={{ marginBottom: 12 }}
+        style={{ marginBottom: 'var(--space-3)' }}
       />
 
       <button
@@ -64,7 +64,7 @@ export default function AddRecipe() {
 
       {duplicate && (
         <div style={{
-          marginTop: 20, padding: 16,
+          marginTop: 'var(--space-5)', padding: 'var(--space-4)',
           background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)',
           borderRadius: 10,
         }}>
@@ -79,10 +79,10 @@ export default function AddRecipe() {
 
       {saved && (
         <div style={{
-          marginTop: 20, padding: 16, background: 'rgba(34,197,94,0.08)',
+          marginTop: 'var(--space-5)', padding: 'var(--space-4)', background: 'rgba(34,197,94,0.08)',
           border: '1px solid rgba(34,197,94,0.2)', borderRadius: 10,
         }}>
-          <p style={{ color: '#22c55e', fontWeight: 600, marginBottom: 10 }}>
+          <p style={{ color: 'var(--success)', fontWeight: 600, marginBottom: 10 }}>
             Saved: {saved.title}
           </p>
           <div style={{ display: 'flex', gap: 10 }}>
